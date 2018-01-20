@@ -4,8 +4,8 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
     <meta http-equiv="content-type" content="text/html;charset=utf-8" />
     <meta name="author" content="chenfeng" />
-    <meta name="keywords" content="Ð¡Ç¿ÉçÇø,Ð¡Ç¿,ÉçÇø" />
-    <meta name="description" content="Ð¡Ç¿ÉçÇøÏêÇéÒ³" />
+    <meta name="keywords" content="å°å¼ºç¤¾åŒº,å°å¼º,ç¤¾åŒº" />
+    <meta name="description" content="å°å¼ºç¤¾åŒºè¯¦æƒ…é¡µ" />
     <title></title>
     <link rel="shortcut icon" type="image/ico" href="favicon.ico">
     <link rel="stylesheet" href="layui/css/layui.css">
@@ -17,7 +17,7 @@
     {#hotListCSS#}
     {#detailCSS#}
     <script src="http://cdnfile.op110.com.cn/controls/jquery/1.9.1/jquery.min.js"></script>
-	<script src="http://cdnfile.op110.com.cn/controls/layer/layer.js"></script>
+    <script src="http://cdnfile.op110.com.cn/controls/layer/layer.js"></script>
     <script src="layui/layui.js"></script>   
     <script src="//cdn.bootcss.com/lightgallery/1.5.0/js/lightgallery.min.js"></script>
     <script src="//cdn.bootcss.com/lightgallery/1.5.0/js/lightgallery-all.min.js"></script>
@@ -39,7 +39,7 @@
         {#hotListHTML#}
       </div>  
     </div>
-    <i class="layui-icon" id="to_top" title="·µ»Ø¶¥²¿">&#xe604;</i>
+    <i class="layui-icon" id="to_top" title="è¿”å›žé¡¶éƒ¨">&#xe604;</i>
     
     <script src="{#global.domain#}/erp_files/ueditor/ueditor.config.js"></script>
     <script src="{#global.domain#}/erp_files/ueditor/ueditor.all.min.js"></script>
@@ -52,26 +52,26 @@
           success: function(text){
             var data_validate = JSON.parse(text);
             if(data_validate.isERPBlacklist === 1 || data_validate.isUserBlacklist === 1){          
-              alert("ÄãÃ»ÓÐÈ¨ÏÞ·ÃÎÊ£¡");        
+              alert("ä½ æ²¡æœ‰æƒé™è®¿é—®ï¼");        
               window.close(); 
             }else{
               var index1 = location.href.indexOf("id");
               var index2 = location.href.lastIndexOf("replyID");
               var communityUuid, replyID;
-              if(index2 === -1){  //Ö±½Ó½øÈëÏêÇéÒ³
+              if(index2 === -1){  //ç›´æŽ¥è¿›å…¥è¯¦æƒ…é¡µ
                 communityUuid = location.href.slice(index1+3);
-              }else{  //´ÓÎÒµÄÏûÏ¢½øÈëÏêÇéÒ³ 
+              }else{  //ä»Žæˆ‘çš„æ¶ˆæ¯è¿›å…¥è¯¦æƒ…é¡µ 
                 communityUuid = location.href.slice(index1+3,index2-1);
                 replyID = location.href.slice(index2+8);
               } 
               
-              //äÖÈ¾ÏêÇéÒ³
+              //æ¸²æŸ“è¯¦æƒ…é¡µ
               detail_init(communityUuid,"{#erp.adm.id#}",data_validate.isAdmin,data_validate.hasNickname,replyID);
 
-              //äÖÈ¾¹Ù·½¹«¸æ
+              //æ¸²æŸ“å®˜æ–¹å…¬å‘Š
               notice_init();
               
-              //µã»÷ËÑË÷¡¢»Ø³µËÑË÷
+              //ç‚¹å‡»æœç´¢ã€å›žè½¦æœç´¢
               $("#search >i").click(function(){
                   header.search();
               });
@@ -81,9 +81,9 @@
                 }
               });
               
-              //¹ö¶¯·µ»Ø¶¥²¿
+              //æ»šåŠ¨è¿”å›žé¡¶éƒ¨
               $(window).on("scroll", function(){
-                var scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;  //Ïà¶Ô¹ö¶¯Ìõ¶¥²¿µÄÆ«ÒÆ
+                var scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;  //ç›¸å¯¹æ»šåŠ¨æ¡é¡¶éƒ¨çš„åç§»
                 if(scrollTop >= 300){
                   $("#to_top").css("display","block");
                 }else{
