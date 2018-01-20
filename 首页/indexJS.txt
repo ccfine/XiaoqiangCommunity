@@ -1,0 +1,340 @@
+<script>
+  //移动鼠标查看用户的信息
+  function scan_info(element){
+    $(element).hover(
+      function(){
+        var _this = $(this);
+        var userERPID = _this.attr("data-userERPID");
+        var userID = _this.attr("data-userID");
+        _this.children("div").show();
+        $.get("main?xwl=344WX73R3DQG", {userERPID:userERPID, userID:userID}, function(data){
+          var info_html = "";
+          var photo = data.rows[0].photo? data.rows[0].photo: "web/imgs/header.png";  
+          info_html += ("<div><img src='"+ photo +"' alt='用户头像' /></div>");
+          info_html += ("<p class='info1'>"+ data.rows[0].nickname +"</p>");
+          if(data.rows[0].isTontisa === 1){
+            info_html += ("<p class='info1' title='同天下官方认证' style='color:#FFB800'>官方</p>");
+          }
+          if(data.rows[0].userLabel === 1){
+            info_html += ("<p class='info1' title='小强ERP专家认证' style='color:#f46e65'>专家V"+ data.rows[0].level +"</p>");
+          }
+          if(data.rows[0].job){
+            info_html += ("<div class='info2'><span>岗位：</span><div style='width:215px;'>"+ data.rows[0].job +"</div></div>");
+          }
+          if(data.rows[0].contactInfo){
+            info_html += ("<div class='info2'><span>社交账号：</span><div style='width:185px;'>"+ data.rows[0].contactInfo +"</div></div>");
+          }
+          if(data.rows[0].motto){
+            info_html += ("<div class='info2'><span>座右铭：</span><div style='width:200px;'>"+ data.rows[0].motto +"</div></div>");
+          }
+          info_html += ("<hr />");
+          var top3_arr = data.rows[0].top3.split(",");
+          var top3Id_arr = data.rows[0].top3_id.split(",");
+          var top3_dd = "";
+          for(var i=0; i<top3_arr.length; i++){
+            top3_dd += ("<dd class='info3'><a href='/sys/main?xwl=344KO405D10C&id="+ top3Id_arr[i] +"' target='_blank' title='"+ top3_arr[i] +"'>"+ top3_arr[i] +"</a></dd>");
+          }
+          info_html += ("<dl><dt>最近发帖：</dt>"+ top3_dd +"</dl>");
+          _this.find(".info").empty().append(info_html); 
+         },"json");
+      },
+      function(){
+        $(this).children("div").hide();
+      }   
+    );    
+  }
+  
+  //封装首页的未解决、已解决、精华帖、全部帖的渲染
+  function init(data, flag){
+    var unsolve_count = 0;  //未解决的帖数
+    var unsolve_arr = [];  // 
+    var resolve_count = 0;  //已解决的帖数
+    var resolve_arr = [];  //已解决的帖子
+    var great_count = 0;  //精华帖的帖数
+    var great_arr = [];  //精华帖的帖子
+    for(var i=0; i<data.length; i++){
+      if(data[i].isClose === 0){
+        unsolve_count++;
+        unsolve_arr.push(data[i]);
+      }   
+      if(data[i].isClose === 1){
+        resolve_count++;
+        resolve_arr.push(data[i]);
+      }   
+      if(data[i].isEssence === 1 && data[i].isClose === 1){  //只有已解决的帖才能为精华帖
+        great_count++;
+        great_arr.push(data[i]);
+      }   
+    }
+
+    //  全部帖（分页）
+    if(data.length === 0){
+      $("#all").html("<h1 style='color:#A4A3A1;text-align:center;font-size:14px;margin-top:30px'>暂无帖子</h1>");    
+      $("#all_page").empty();
+    }else{
+      layui.use("laypage", function(){
+        var laypage = layui.laypage;  //分页
+        laypage.render({
+          elem: "all_page",  //存放分页的容器
+          count: data.length,  //数据总数
+          limit: 15,  //每页显示的条数
+          groups: 3,  //连续出现的页码个数
+          first: "首页",
+          last: "尾页",
+          layout: ["count","prev","page","next","skip"],
+          jump: function(obj){
+            //渲染模板
+            document.getElementById("all").innerHTML = function(){
+              var all_html = "";
+              var all_html_li = "";
+              var Data = data.concat().splice(obj.curr*obj.limit - obj.limit, obj.limit);
+              layui.each(Data, function(index, item){
+                all_html_li += ("<li><div class='scan_all' data-userERPID='"+ item.addUserERPID +"' data-userID='"+ item.addUserID +"'>");
+                if(item.photo === null){ 
+                  all_html_li += ("<img src='web/imgs/header.png' width='50' height='50' alt='默认用户头像' />");
+                }else{            	
+                  all_html_li += ("<img src='"+ item.photo +"' class='photo' alt='用户头像' />");
+                }   
+    			all_html_li += ("<div><div></div><div class='triangle'></div><div class='triangle'></div><div class='triangle'></div><div class='info'></div></div></div><div><div>");
+                if(item.isTop === 1 && item.isEssence === 1 && item.isClose === 1){
+                  all_html_li += ("<span style='color:#1E9FFF;border:1px solid #1E9FFF'>精华帖</span>");
+                }
+                if(item.isTop === 1 && item.isEssence === 0 && item.isClose === 1){
+                  all_html_li += ("<span style='color:#5FB878;border:1px solid #5FB878'>已解决</span>");
+                }
+                if(item.isClose === 0){
+                  all_html_li += ("<span style='color:#AFB0B6;border:1px solid #AFB0B6'>未解决</span>");
+                }
+                if(item.isClose === 1 && item.isEssence === 0 && item.isTop === 0){
+                  all_html_li += ("<span style='color:#5FB878;border:1px solid #5FB878'>已解决</span>");
+                }               
+                if(item.isEssence === 1 && item.isClose === 1 && item.isTop === 0){
+                  all_html_li += ("<span style='color:#1E9FFF;border:1px solid #1E9FFF'>精华帖</span>");
+                }
+                all_html_li += ("<h1><a href='/sys/main?xwl=344KO405D10C&id="+ item.id +"' target='_blank' title='"+ item.title +"'>"+ item.title +"</a></h1>");
+                if(item.isTop === 1 && flag === 1){
+                  all_html_li += ("<span>置顶</span>");
+                }                                   
+                all_html_li += ("</div><div><span style='margin-left:4.5px'>"+ item.addUserName +"</span>");
+                if(item.isTontisa === 1){
+                  all_html_li += ("<span class='isTontisa' title='同天下官方认证'>官方</span>");
+                }
+                if(item.userLabel === 1){
+                  all_html_li += ("<span class='userLabel' title='小强ERP专家认证'>专家V"+ item.level +"</span>");
+                }
+                var Index = item.addTime.lastIndexOf(":");
+                all_html_li += ("<span style='position:relative;left:5px'>"+ item.addTime.slice(0,Index) +"</span>");
+                var label_arr = item.labels.split(",").slice(0,3);
+                if(item.labels.split(",").length > 3){
+                  label_arr[2] += "...";
+                }   
+                layui.each(label_arr, function(i, item){
+                  all_html_li += ("<span class='label'>"+ item +"</span>");
+                }); 
+                all_html_li += ("<div><span title='评论数'><i class='layui-icon'>&#xe63a;</i> "+ item.replyCount +"</span>");    
+                all_html_li += ("<span title='浏览数'><img src='https://ohp96o3wl.qnssl.com/files/1/file/20171012/browse_1507773719356.png' width='16' height='16' alt='浏览数' />"+ item.viewCount +"</span></div>");
+                all_html_li += ("</div></div></li>");
+              });            	
+
+              all_html += "<ul>"+ all_html_li +"</ul>";
+              return all_html;
+            }();  //匿名函数，自动调用
+            scan_info(".scan_all");
+          }
+        });
+      });
+    }  	
+    //  未解决（分页）
+    if(unsolve_count === 0){  
+      $("#unsolve_page").empty();
+      //1：页面初始化渲染或为空搜索  2：搜索时重新渲染
+      if(flag === 1){
+        $("#unsolve").html("<h1 style='color:#A4A3A1;text-align:center;font-size:14px;margin-top:30px'>暂无帖子</h1>");  
+      }else if(flag === 2){
+        $("#unsolve").html("<h1 style='color:#A4A3A1;text-align:center;font-size:14px;margin-top:30px'>该类别未有您想要的结果，可以去其他类别看看</h1>"); 
+      }    
+    }else{
+      layui.use("laypage", function(){
+        var laypage = layui.laypage;  //分页
+        laypage.render({
+          elem: "unsolve_page",  //存放分页的容器
+          count: unsolve_count,  //数据总数
+          limit: 15,  //每页显示的条数
+          groups: 3,  //连续出现的页码个数
+          first: "首页",
+          last: "尾页",
+          layout: ["count","prev","page","next","skip"],
+          jump: function(obj){
+            //渲染模板
+            document.getElementById("unsolve").innerHTML = function(){
+                var unsolve_html = "";
+                var unsolve_html_li = "";
+                var Data = unsolve_arr.concat().splice(obj.curr*obj.limit - obj.limit, obj.limit);
+                layui.each(Data, function(index, item){
+                    unsolve_html_li += ("<li><div class='scan_unsolve' data-userERPID='"+ item.addUserERPID +"' data-userID='"+ item.addUserID +"'>");
+                    if(item.photo === null){ 
+                      unsolve_html_li += ("<img src='web/imgs/header.png' width='50' height='50' alt='默认用户头像' />");
+                    }else{            	
+                      unsolve_html_li += ("<img src='"+ item.photo +"' class='photo' alt='用户头像' />");
+                    }   
+                    unsolve_html_li += ("<div><div></div><div class='triangle'></div><div class='triangle'></div><div class='triangle'></div><div class='info'></div></div></div>");                              
+                    unsolve_html_li += ("<div><div><span style='color:#AFB0B6;border:1px solid #AFB0B6'>未解决</span>");
+                    unsolve_html_li += ("<h1><a href='/sys/main?xwl=344KO405D10C&id="+ item.id +"' target='_blank' title='"+ item.title +"'>"+ item.title +"</a></h1>");                  
+                    unsolve_html_li += ("</div><div><span style='margin-left:4.5px'>"+ item.addUserName +"</span>");
+                    if(item.isTontisa === 1){
+                      unsolve_html_li += ("<span class='isTontisa' title='同天下官方认证'>官方</span>");
+                    }
+                    if(item.userLabel === 1){
+					  unsolve_html_li += ("<span class='userLabel' title='小强ERP专家认证'>专家V"+ item.level +"</span>");
+                    }
+                    var Index = item.addTime.lastIndexOf(":");
+                    unsolve_html_li += ("<span style='position:relative;left:5px'>"+ item.addTime.slice(0,Index) +"</span>");
+                    var label_arr = item.labels.split(",").slice(0,3);
+                    if(item.labels.split(",").length > 3){
+                      label_arr[2] += "...";
+                    }   
+                    layui.each(label_arr, function(i, item){
+                      unsolve_html_li += ("<span class='label'>"+ item +"</span>");
+                    }); 
+                    unsolve_html_li += ("<div><span title='评论数'><i class='layui-icon'>&#xe63a;</i> "+ item.replyCount +"</span>");    
+                    unsolve_html_li += ("<span title='浏览数'><img src='https://ohp96o3wl.qnssl.com/files/1/file/20171012/browse_1507773719356.png' width='16' height='16' alt='浏览数' />"+ item.viewCount +"</span></div>");
+                    unsolve_html_li += ("</div></div></li>");     
+                });            	
+                unsolve_html += "<ul>"+ unsolve_html_li +"</ul>";
+                return unsolve_html;
+            }();  //匿名函数，自动调用
+            scan_info(".scan_unsolve");
+          }
+        });
+      });
+    }
+    //  已解决（分页）
+    if(resolve_count === 0){
+      $("#resolve_page").empty();
+      //1：页面初始化渲染或为空搜索  2：搜索时重新渲染
+      if(flag === 1){
+        $("#resolve").html("<h1 style='color:#A4A3A1;text-align:center;font-size:14px;margin-top:30px'>暂无已解决的帖</h1>");  
+      }else if(flag === 2){
+        $("#resolve").html("<h1 style='color:#A4A3A1;text-align:center;font-size:14px;margin-top:30px'>该类别未有您想要的结果，可以去其他类别看看</h1>"); 
+      }    
+    }else{
+      layui.use("laypage", function(){
+        var laypage = layui.laypage;  //分页
+        laypage.render({
+          elem: "resolve_page",  //存放分页的容器
+          count: resolve_count,  //数据总数
+          limit: 15,  //每页显示的条数
+          groups: 3,  //连续出现的页码个数
+          first: "首页",
+          last: "尾页",
+          layout: ["count","prev","page","next","skip"],
+          jump: function(obj){
+            //渲染模板
+            document.getElementById("resolve").innerHTML = function(){
+                var resolve_html = "";
+                var resolve_html_li = "";
+                var Data = resolve_arr.concat().splice(obj.curr*obj.limit - obj.limit, obj.limit);
+                layui.each(Data, function(index, item){
+                    resolve_html_li += ("<li><div class='scan_resolve' data-userERPID='"+ item.addUserERPID +"' data-userID='"+ item.addUserID +"'>");
+                    if(item.photo === null){ 
+                      resolve_html_li += ("<img src='web/imgs/header.png' width='50' height='50' alt='默认用户头像' />");
+                    }else{            	
+                      resolve_html_li += ("<img src='"+ item.photo +"' class='photo' alt='用户头像' />");
+                    }   
+                    resolve_html_li += ("<div><div></div><div class='triangle'></div><div class='triangle'></div><div class='triangle'></div><div class='info'></div></div></div>");                                     
+                    resolve_html_li += "<div><div><span style='color:#5FB878;border:1px solid #5FB878'>已解决</span>";
+                    resolve_html_li += ("<h1><a href='/sys/main?xwl=344KO405D10C&id="+ item.id +"' target='_blank' title='"+ item.title +"'>"+ item.title +"</a></h1>");                    
+                    resolve_html_li += ("</div><div><span style='margin-left:4.5px'>"+ item.addUserName +"</span>");
+                    if(item.isTontisa === 1){
+                      resolve_html_li += ("<span class='isTontisa' title='同天下官方认证'>官方</span>");
+                    }
+                    if(item.userLabel === 1){
+					  resolve_html_li += ("<span class='userLabel' title='小强ERP专家认证'>专家V"+ item.level +"</span>");
+                    }
+                    var Index = item.addTime.lastIndexOf(":");
+                    resolve_html_li += ("<span style='position:relative;left:5px'>"+ item.addTime.slice(0,Index) +"</span>");
+                    var label_arr = item.labels.split(",").slice(0,3);
+                    if(item.labels.split(",").length > 3){
+                      label_arr[2] += "...";
+                    }   
+                    layui.each(label_arr, function(i, item){
+                      resolve_html_li += ("<span class='label'>"+ item +"</span>");
+                    }); 
+                    resolve_html_li += ("<div><span title='评论数'><i class='layui-icon'>&#xe63a;</i> "+ item.replyCount +"</span>");    
+                    resolve_html_li += ("<span title='浏览数'><img src='https://ohp96o3wl.qnssl.com/files/1/file/20171012/browse_1507773719356.png' width='16' height='16' alt='浏览数' />"+ item.viewCount +"</span></div>");
+                    resolve_html_li += ("</div></div></li>");     
+                });            	
+                resolve_html += "<ul>"+ resolve_html_li +"</ul>";
+                return resolve_html;
+            }();  //匿名函数，自动调用
+            scan_info(".scan_resolve");
+          }
+        });       
+      });  
+    }  
+    //  精华帖（分页）
+    if(great_count === 0){
+      $("#great_page").empty();
+      //1：页面初始化渲染或为空搜索  2：搜索时重新渲染
+      if(flag === 1){
+        $("#great").html("<h1 style='color:#A4A3A1;text-align:center;font-size:14px;margin-top:30px'>暂无精华帖</h1>");  
+      }else if(flag === 2){
+        $("#great").html("<h1 style='color:#A4A3A1;text-align:center;font-size:14px;margin-top:30px'>该类别未有您想要的结果，可以去其他类别看看</h1>"); 
+      }    
+    }else{
+      layui.use("laypage", function(){
+        var laypage = layui.laypage;  //分页
+        laypage.render({
+          elem: "great_page",  //存放分页的容器
+          count: great_count,  //数据总数
+          limit: 15,  //每页显示的条数
+          groups: 3,  //连续出现的页码个数
+          first: "首页",
+          last: "尾页",
+          layout: ["count","prev","page","next","skip"],
+          jump: function(obj){
+            //渲染模板
+            document.getElementById("great").innerHTML = function(){
+                var great_html = "";
+                var great_html_li = "";
+                var Data = great_arr.concat().splice(obj.curr*obj.limit - obj.limit, obj.limit);
+                layui.each(Data, function(index, item){
+                    great_html_li += ("<li><div class='scan_great' data-userERPID='"+ item.addUserERPID +"' data-userID='"+ item.addUserID +"'>");
+                    if(item.photo === null){ 
+                      great_html_li += ("<img src='web/imgs/header.png' width='50' height='50' alt='默认用户头像' />");
+                    }else{            	
+                      great_html_li += ("<img src='"+ item.photo +"' class='photo' alt='用户头像' />");
+                    }   
+                    great_html_li += ("<div><div></div><div class='triangle'></div><div class='triangle'></div><div class='triangle'></div><div class='info'></div></div></div>");                                            
+                    great_html_li += ("<div><div><span style='color:#1E9FFF;border:1px solid #1E9FFF'>精华帖</span>");
+                    great_html_li += ("<h1><a href='/sys/main?xwl=344KO405D10C&id="+ item.id +"' target='_blank' title='"+ item.title +"'>"+ item.title +"</a></h1>");                    
+                    great_html_li += ("</div><div><span style='margin-left:4.5px'>"+ item.addUserName +"</span>");
+                    if(item.isTontisa === 1){
+                      great_html_li += ("<span class='isTontisa' title='同天下官方认证'>官方</span>");
+                    }
+                    if(item.userLabel === 1){
+					  great_html_li += ("<span class='userLabel' title='小强ERP专家认证'>专家V"+ item.level +"</span>");
+                    }
+                    var Index = item.addTime.lastIndexOf(":");
+                    great_html_li += ("<span style='position:relative;left:5px'>"+ item.addTime.slice(0,Index) +"</span>");
+                    var label_arr = item.labels.split(",").slice(0,3);
+                    if(item.labels.split(",").length > 3){
+                      label_arr[2] += "...";
+                    }   
+                    layui.each(label_arr, function(i, item){
+                      great_html_li += ("<span class='label'>"+ item +"</span>");
+                    }); 
+                    great_html_li += ("<div><span title='评论数'><i class='layui-icon'>&#xe63a;</i> "+ item.replyCount +"</span>");    
+                    great_html_li += ("<span title='浏览数'><img src='https://ohp96o3wl.qnssl.com/files/1/file/20171012/browse_1507773719356.png' width='16' height='16' alt='浏览数' />"+ item.viewCount +"</span></div>");
+                    great_html_li += ("</div></div></li>");     
+                });            	
+                great_html += "<ul>"+ great_html_li +"</ul>";
+                return great_html;
+            }();  //匿名函数，自动调用
+            scan_info(".scan_great");
+          }
+        });      
+      }); 
+    } 
+  }  
+</script>

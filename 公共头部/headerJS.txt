@@ -1,0 +1,55 @@
+<script>
+  var header = {
+    //我的消息提示
+    refresh: function(){
+      $.ajax({
+        type: "get",
+        url: "main?xwl=344GB4IH9WPR",
+        success: function(text){
+          var number = JSON.parse(text).total;
+          if(number > 0){
+            $("#number").css("visibility","visible");
+          }else if(number === 0){
+            $("#number").css("visibility","hidden");
+          }
+          if(number > 99){
+            number = "99+";
+          }
+          $("#number").text(number);
+        }
+      });
+    },
+    
+    //搜索
+    search: function(){
+      var skey = $.trim($("#search >input").val());  //去除前后的空格
+      window.open("/sys/main?xwl=344KO405BH4Z&skey="+skey,"_self");
+    }
+  };
+  
+  
+  $.get("main?xwl=344ONQNV09OL", function(json){
+    if(json.hasNickname == 1){
+      $("#my_homePage").html("<i class='layui-icon'>&#xe612;</i> 我的");
+    }else{
+      $.ajax({
+        type: "get",
+        url: "main?xwl=344Q6AGRMFBI",
+        dataType: "json",
+        success: function(json){
+          var photo;
+          if(json.rows[0].photo === null){
+            photo = "web/imgs/header.png";
+          }else{
+            photo = json.rows[0].photo;
+          }
+          $("#my_homePage").html("<img src='"+photo+"'><span>"+json.rows[0].nickname+"</span><span class='layui-badge' id='number'></span>");
+          
+          //实时查看我的消息提示
+          header.refresh();
+          setInterval(header.refresh,30000);
+        }
+      });
+    }
+  },"json");
+</script>

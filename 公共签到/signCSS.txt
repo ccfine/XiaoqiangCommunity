@@ -1,0 +1,93 @@
+<style>
+  #sign >div:first-child {
+    padding-bottom: 7px;
+    border-bottom: 1px solid #ddd;
+  }
+  #sign >div:first-child >b {
+    display: inline-block;
+    width: 0;
+    height: 10px;
+    border-left: 1px solid #ddd;
+    margin: 0 5px;
+  }
+  #instruction-btn:hover {
+    color: #009688;
+    cursor: pointer;
+  }
+  #sign >div:first-child >span:last-child {
+    float: right;
+    color: #999;
+  }
+  #sign-day {
+    color: #FF5760;
+  }
+  #sign >div:nth-child(2) {
+    text-align: center;
+    margin: 20px 0 2px;
+  }
+  #register {
+    display: inline-block;
+    padding: 5px 8px;
+    border-radius: 3px;
+    color: #fff;
+    background-color: #FF5A27;
+    transition: opacity 0.2s linear;
+  }
+  #register:hover {
+    opacity: 0.8;
+  }
+  #instruction-mask {
+    width: 100%;
+    height: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 4;
+    background-color: #000;
+    opacity: 0.7;
+    display: none;
+  }
+  #instruction {
+    width: 300px;
+    height: 400px;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 5;
+    border-radius: 4px;
+    background-color: #fff;
+    display: none;
+  }
+  #instruction >h1 {
+    padding: 10px 20px;
+    border-radius: 4px 4px 0 0;
+    background-color: #F8F8F8;
+  }
+  #instruction-close {
+    width: 20px;
+    height: 20px;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    transition: opacity 0.2s linear;    
+  }
+  #instruction-close:hover {
+    opacity: 0.7; 
+    cursor: pointer;
+  }
+  #instruction-close >b {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 20px;
+    height: 0;
+    border-top: 1px solid #000;
+  }
+  #instruction-close >b:first-child {
+    transform: rotate(45deg);
+  }
+  #instruction-close >b:last-child {
+    transform: rotate(-45deg);
+  } 
+</style>

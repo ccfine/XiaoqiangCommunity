@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="zh-cn">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <meta http-equiv="content-type" content="text/html;charset=utf-8" />
+    <meta name="author" content="chenfeng" />
+    <meta name="keywords" content="小强社区,小强,社区" />
+    <meta name="description" content="小强社区详情页" />
+    <title></title>
+    <link rel="shortcut icon" type="image/ico" href="favicon.ico">
+    <link rel="stylesheet" href="layui/css/layui.css">
+    <link rel="stylesheet" href="//cdn.bootcss.com/lightgallery/1.5.0/css/lightgallery.min.css" />
+    {#headerCSS#}
+    {#noticeCSS#}
+    {#signCSS#}
+    {#replyListCSS#}
+    {#hotListCSS#}
+    {#detailCSS#}
+    <script src="http://cdnfile.op110.com.cn/controls/jquery/1.9.1/jquery.min.js"></script>
+	<script src="http://cdnfile.op110.com.cn/controls/layer/layer.js"></script>
+    <script src="layui/layui.js"></script>   
+    <script src="//cdn.bootcss.com/lightgallery/1.5.0/js/lightgallery.min.js"></script>
+    <script src="//cdn.bootcss.com/lightgallery/1.5.0/js/lightgallery-all.min.js"></script>
+    <script src="https://cdn.bootcss.com/jquery-mousewheel/3.1.13/jquery.mousewheel.min.js"></script>
+    {#headerJS#}
+    {#noticeTemplet#}
+    {#noticeJS#}
+    {#detailTemplet#}
+    {#detailJS#}
+  </head>
+  <body>
+    {#headerHTML#}
+    <div id="section">
+      <div id="detail"></div>
+      <div id="aside">
+        {#noticeHTML#}
+        {#signHTML#}
+        {#replyListHTML#}
+        {#hotListHTML#}
+      </div>  
+    </div>
+    <i class="layui-icon" id="to_top" title="返回顶部">&#xe604;</i>
+    
+    <script src="{#global.domain#}/erp_files/ueditor/ueditor.config.js"></script>
+    <script src="{#global.domain#}/erp_files/ueditor/ueditor.all.min.js"></script>
+    <script src="{#global.domain#}/erp_files/ueditor/lang/zh-cn/zh-cn.js"></script>
+    <script>
+      $(document).ready(function(){ 
+        $.ajax({
+          type: "get",
+          url: "main?xwl=344ONQNV09OL",
+          success: function(text){
+            var data_validate = JSON.parse(text);
+            if(data_validate.isERPBlacklist === 1 || data_validate.isUserBlacklist === 1){          
+              alert("你没有权限访问！");        
+              window.close(); 
+            }else{
+              var index1 = location.href.indexOf("id");
+              var index2 = location.href.lastIndexOf("replyID");
+              var communityUuid, replyID;
+              if(index2 === -1){  //直接进入详情页
+                communityUuid = location.href.slice(index1+3);
+              }else{  //从我的消息进入详情页 
+                communityUuid = location.href.slice(index1+3,index2-1);
+                replyID = location.href.slice(index2+8);
+              } 
+              
+              //渲染详情页
+              detail_init(communityUuid,"{#erp.adm.id#}",data_validate.isAdmin,data_validate.hasNickname,replyID);
+
+              //渲染官方公告
+              notice_init();
+              
+              //点击搜索、回车搜索
+              $("#search >i").click(function(){
+                  header.search();
+              });
+              $("#search >input").keydown(function(e){
+                if(e.which === 13){
+                  header.search(); 
+                }
+              });
+              
+              //滚动返回顶部
+              $(window).on("scroll", function(){
+                var scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;  //相对滚动条顶部的偏移
+                if(scrollTop >= 300){
+                  $("#to_top").css("display","block");
+                }else{
+                  $("#to_top").css("display","none");
+                }
+              });
+              $("#to_top").on("click", function(){
+                $("html, body").animate({scrollTop: 0}, 600);
+              });
+            }
+          }
+        });
+      }); 
+    </script> 
+    {#signJS#}
+  </body>
+</html>

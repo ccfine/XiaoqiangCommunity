@@ -1,0 +1,19 @@
+<div id="sign">
+  <div>
+    签到
+    <b></b>
+    <span id="instruction-btn" title="点击查看签到的说明">说明</span>
+    <span>已连续签到 <span id="sign-day">0</span> 天</span>
+  </div>
+  <div>
+    <a href="javascript:void(0)" id="register" title="赶紧签到吧">今日签到</a>
+  </div>
+  <div id="instruction-mask"></div>
+  <div id="instruction">
+    <h1>签到说明</h1>
+    <div id="instruction-close" title="点击关闭窗口">
+      <b></b>
+      <b></b>
+    </div>
+  </div>
+</div>

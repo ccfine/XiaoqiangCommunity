@@ -1,0 +1,5 @@
+<!-- 官方公告模板引擎 -->
+<script type="text/html" id="Notice">
+  <h1>官方公告</h1>
+  <ul></ul>
+</script> 

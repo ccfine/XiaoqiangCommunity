@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="zh-cn">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta http-equiv="content-type" content="text/html;charset=utf-8">
+    <meta name="author" content="majun">
+    <meta name="description" content="小强社区发我的主页">
+    <title>我的主页</title>
+    <link rel="shortcut icon" type="image/ico" href="favicon.ico">
+    <link rel="stylesheet" href="layui/css/layui.css">
+    {#headerCSS#}
+    {#homeCSS#}
+    <script src="http://cdnfile.op110.com.cn/controls/jquery/1.9.1/jquery.min.js"></script>
+	<script src="http://cdnfile.op110.com.cn/controls/layer/layer.js"></script>
+    <script src="layui/layui.js"></script>
+    <script src="web/js/cropbox.js"></script>
+    <script src="https://cdn.bootcss.com/jquery-mousewheel/3.1.13/jquery.mousewheel.min.js"></script>
+    {#headerJS#}
+    {#homeTemplet#}
+    {#home_pageTemplet#}
+    {#homeJS#}
+  </head>
+  <body>
+    {#headerHTML#}
+    <div id="section"></div>
+    
+    <script>
+      $(document).ready(function(){       
+        //个人中心
+        home_init();
+        //点击搜索、回车搜索
+        $("#search >i").click(function(){
+            header.search();
+        });
+        $("#search >input").keydown(function(e){
+          if(e.which === 13){
+            header.search(); 
+          }
+        });
+      }); 
+    </script>
+  </body>
+</html>

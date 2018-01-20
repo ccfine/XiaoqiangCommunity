@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="zh-cn">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <meta http-equiv="content-type" content="text/html;charset=utf-8" />
+    <meta name="author" content="chenfeng" />
+    <meta name="keywords" content="小强社区,小强,社区" />
+    <meta name="description" content="小强社区首页" />
+    <title>小强社区</title>
+    <link rel="shortcut icon" type="image/ico" href="favicon.ico">
+    <link rel="stylesheet" href="layui/css/layui.css">
+    {#headerCSS#}
+    {#noticeCSS#}
+    {#signCSS#}
+    {#replyListCSS#}
+    {#hotListCSS#}
+    {#indexCSS#}
+    <script src="http://cdnfile.op110.com.cn/controls/jquery/1.9.1/jquery.min.js"></script>
+    <script src="layui/layui.js"></script>
+    {#headerJS#}
+    {#noticeTemplet#}
+    {#noticeJS#}
+    {#indexJS#}   
+  </head>
+  <body>
+    {#headerHTML#}
+    <div id="section">
+      <div id="main">
+        <div class="layui-tab layui-tab-brief" id="tab" lay-filter="tab">
+          <ul class="layui-tab-title">
+            <li lay-id="1" class="layui-this">全部帖</li>
+            <li lay-id="2">未解决</li>
+            <li lay-id="3">已解决</li>
+            <li lay-id="4">精华帖</li>       
+          </ul>
+          <div class="layui-tab-content">
+            <div class="layui-tab-item layui-show">
+              <div id="all" class="tpl"></div>
+              <div id="all_page"></div>
+            </div>
+            <div class="layui-tab-item">
+              <div id="unsolve" class="tpl"></div>
+              <div id="unsolve_page"></div>
+            </div>
+            <div class="layui-tab-item">
+              <div id="resolve" class="tpl"></div>
+              <div id="resolve_page"></div>
+            </div>
+            <div class="layui-tab-item">
+              <div id="great" class="tpl"></div>
+              <div id="great_page"></div>
+            </div>       
+          </div>
+        </div>
+        <a class="layui-btn layui-btn-small" id="add_note" href="/sys/main?xwl=344KO405BWNU">
+          <i class="layui-icon">&#xe642;</i>发表新帖
+        </a>
+      </div>
+      <div id="aside">
+        {#noticeHTML#}
+        {#signHTML#}
+        {#replyListHTML#}
+        {#hotListHTML#}
+      </div> 
+    </div>
+    <i class="layui-icon" id="to_top" title="返回顶部">&#xe604;</i>
+  
+    <script>
+      $(document).ready(function(){
+        $.ajax({
+          type: "get",
+          url: "main?xwl=344ONQNV09OL",
+          success: function(text){
+            if(JSON.parse(text).isERPBlacklist === 1 || JSON.parse(text).isUserBlacklist === 1){          
+              alert("你没有权限访问！");        
+              window.close(); 
+            }else{
+              var index = location.href.indexOf("skey");
+              if(index === -1){  //初始化渲染
+                $.ajax({
+                  type: "get",
+                  url: "main?xwl=344CRSTLO9QM",
+                  success: function(text){       
+                    //渲染未解决、已解决、精华帖、全部帖
+                    init(JSON.parse(text).rows,1);    
+                  }
+                });
+              }else{  //搜索渲染
+                var skey = decodeURI(location.href).slice(index+5);
+                $("#search >input").val(skey);
+                $("#search >input").focus();
+                $.ajax({
+                  type: "get",
+                  url: "main?xwl=344CRSTLO9QM&skey="+skey,
+                  success: function(text){
+                    var data = JSON.parse(text);
+                    if(data.success){  
+                      //重新渲染未解决、已解决、精华帖、全部帖
+                      if(skey === ""){
+                        init(data.rows,1);  //为空时取得全部数据，相当于初始化加载           
+                      }else{
+                        init(data.rows,2);  //搜索时不需要置顶提示
+                      }              
+                    }else{
+                      $("#all_page, #unsolve_page, #resolve_page, #great_page").empty();
+                      $("#all, #unsolve, #resolve, #great").html("<h1 style='color:#A4A3A1;text-align:center;font-size:14px;margin-top:30px'>未有您想要的结果，请换个关键字试试</h1>");   
+                    }
+                  }
+                });
+              }
+              
+              //渲染官方公告
+              notice_init();
+
+              //tab切换的定位
+              layui.use("element",function(){
+                var element = layui.element;  //tab切换  	 
+                var layid = location.hash.replace(/^#tab=/, '');  //先获取layid，为1,2，3,4或第一次加载时为空
+                element.tabChange("tab", layid);  //切换到相应的tab
+                element.on("tab(tab)", function(){
+                  location.hash = "tab="+ $(this).attr("lay-id");  //改变锚链接
+                });
+              });
+
+              $("#reload").click(function(event){
+                event.preventDefault();
+                var index1 = location.href.indexOf("&");
+                if(index1 === -1){
+                  location.reload();  //刷新页面
+                }else{
+                  var index2 = location.href.indexOf("#");
+                  if(index2 === -1){
+                    location.href = location.href.slice(0,index1);  //只搜索不切换
+                  }else{
+                    var str_skey = location.href.slice(index1,index2);
+                    location.href = location.href.replace(str_skey,"");  //去掉skey字段
+                  }
+                }
+              });
+
+              //点击搜索、回车搜索
+              $("#search >i").click(function(){
+                  header.search();
+              });
+              $("#search >input").keydown(function(e){
+                if(e.which === 13){  
+                  header.search(); 
+                }
+              });
+
+              //滚动返回顶部
+              $(window).on("scroll", function(){
+                var scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;  //相对滚动条顶部的偏移
+                if(scrollTop >= 300){
+                  $("#to_top").css("display", "block");
+                }else{
+                  $("#to_top").css("display", "none");
+                }
+              });
+              $("#to_top").on("click", function(){
+                $("html, body").animate({scrollTop: 0}, 600);
+              });
+            }
+          }
+        });
+      });
+    </script>
+    {#signJS#}
+  </body>
+</html>

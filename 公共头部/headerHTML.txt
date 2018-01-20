@@ -1,0 +1,12 @@
+<div id="header">
+  <div id="nav">
+    <div>
+      <img src="https://cdn.op110.com.cn/lib/imgs/xqbbs/xqbbs_logo.png" width="120" height="30" vspace="15" title="小强社区欢迎您" />
+      <a href="/sys/main?xwl=344KO405BH4Z" id="reload"><i class="layui-icon">&#xe68e;</i> 首页</a>
+      <a href="/sys/main?xwl=344KO405D4IA" id="my_homePage"  title="关于我的信息"></a> 
+    </div>  
+    <div id="search">
+      <i class="layui-icon" title="点击搜索或回车搜索">&#xe615;</i><input type="text" maxlength="50" placeholder="搜索你想要的内容" />
+    </div>
+  </div>	
+</div>

@@ -1,0 +1,516 @@
+<script>
+  var wordTool = {
+    /*
+     * 主要功能：初始化插件
+     * @param opt = ['#id1', '#id2']
+     * @param selector 选择器，可以用id或者class，如：'#id'或'.class'。必填项
+     * @param data-max 最大字数，不写默认200个字。非必填项
+     * @param data-right 红色数字离文本域右边的距离，左正右负。非必填项
+     * @param data-bottom 红色数字离文本域底部的距离，上正下负。非必填项
+    */
+    init_normal: function (item) {
+      var max = $(item).attr('data-max') ? $(item).attr('data-max') : 50,
+          right = $(item).attr('data-right') ? Number($(item).attr('data-right'))+15 : 15,
+          bottom = $(item).attr('data-bottom') ? Number($(item).attr('data-bottom'))+10 : 10,
+          id = item.substring(1);
+          span = '<span class="wordwrap'+ id +'"><var class="word'+ id +'">'+max+'</var>/'+max+'</span>';
+      $(item).append(span);
+      wordTool._countInputNum(item);
+      wordTool._initCss(id, right, bottom);
+    },
+    
+    init_notice: function (item) {
+      var max = $(item).attr('data-max') ? $(item).attr('data-max') : 50,
+          right = $(item).attr('data-right') ? Number($(item).attr('data-right'))+15 : 15,
+          bottom = $(item).attr('data-bottom') ? Number($(item).attr('data-bottom'))+10 : 10,
+          id = item.substring(1);
+          span = '<span class="wordwrap'+ id +'"><var class="word'+ id +'">'+max+'</var>/'+max+'</span>';
+      $(item).append(span);
+      wordTool._countInputNum(item);
+      wordTool._initCss(id, right, bottom);
+    },
+    /*
+     * 主要功能：剩余字数统计
+     * @param sel 文本框外层div的id值，带'#'
+    */
+    _countInputNum: function (item) {
+      //先选出 input 和 统计字数 dom 节点
+      var div = $(item),
+          id = item.substring(1),
+          input = div.find('input'),
+          wordWrap = div.find('.word'+id),
+          max = wordWrap.text(),
+          curLength = input.val().length;
+
+      input[0].setAttribute('maxlength', max); 
+      wordWrap.text(max - curLength);
+
+      input.on('input propertychange', function() {
+          wordWrap.text(max - $(this).val().length);
+      });
+      input.on('focus', function () {
+          input.select();
+      });
+    },
+    /*
+     * 主要功能：初始化样式
+     * @param id 文本框外层div的id值，不带'#'
+     * @param right 数字距离文本框右边的距离，只写数字，不带'px'
+     * @param left 数字距离文本框底部的距离，只写数字，不带'px'  
+    */
+    _initCss: function (id, right, bottom) {
+       $('.wordwrap' + id).css({'position': 'absolute', 'right': right + 'px', 'bottom': bottom + 'px'});
+       $('.word'+ id).css({'color': '#990000', 'padding': '0 2px','font-style':'normal'});
+    }
+  };
+  
+  function note(flag){
+    $.ajax({
+          type: "get",
+          url: "main?xwl=344ONQNV09OL",
+          success: function(text){        
+            var data = JSON.parse(text);
+            data.flag = flag;
+            var hasNickname = data.hasNickname;
+            var isAdmin = data.isAdmin;
+
+            if(data.isERPBlacklist === 1 || data.isUserBlacklist === 1){         
+              alert("你没有权限访问！");        
+              window.close();
+            }else{
+              var publish_tpl = Publish.innerHTML;
+              var publish_view = document.getElementById("section");
+              layui.use("laytpl",function(){
+                var laytpl = layui.laytpl;
+                laytpl(publish_tpl).render(data, function(html){
+                publish_view.innerHTML = html;              
+                 
+                if(flag === 1 || flag === 2){ 
+                  //初始化标题栏，规定不能超过50字  (wordCount1:发布新帖的标题栏，wordCount2:发布公告的标题栏，)   
+                  wordTool.init_normal('#wordCount1'); 
+                  
+                  //发布新帖编辑框加载
+                  var ue_new = UE.getEditor('div_editor_new',{
+                    toolbars: [ //只显示以下的功能按钮在编辑器的导航栏里
+                       ["bold","italic","underline","strikethrough","forecolor","backcolor","fontsize","fontfamily",
+                        "fontborder","horizontal","lineheight","justify","rowspacing","formatmatch","link","unlink",
+                        "autotypeset","emotion","simpleupload","insertimage","imagefloat","attachment","date","time",
+                        "undo","redo"]
+                    ],
+                    initialFrameHeight: 350,
+                    autoFloatEnabled: true          
+                  });
+                  ue_new.ready(function() {
+                    this.execCommand('serverparam',{'erp.id': '{#erp.id#}'});
+                    //Ctrl+Enter快捷键发表新帖或编辑新帖提交
+                    var tag = true;
+                    $('iframe#ueditor_0').contents().on('keydown',function(event){
+                      if(event.ctrlKey && event.which==13 && tag){
+                        tag = false;
+                        $("#btn-sub-new").click();
+                        $("#btn-sub-new-edit").click();
+                      }
+                      setTimeout(function(){
+                        tag = true;
+                        },4000);
+                    });
+                  });
+                  
+                  //获取帖子标签
+                  $.ajax({
+                    type:"get",
+                    url:"main?xwl=344COKZIA060",
+                    success: function(text){
+                      var data = JSON.parse(text).rows;
+                      for(var i=0;i<data.length;i++){
+                        $('#label_new').append('<li class="layui-anim" data-anim="layui-anim-scaleSpring" data-labelsID='+data[i].id+'>'+data[i].labelName+'</li>');
+                      }
+                    }
+                  });
+
+                  //鼠标悬停事件
+                  $('.layui-anim').hover(
+                    function(){
+                      $(this).addClass("mouse-even");
+                    },
+                    function(){
+                      $(this).removeClass("mouse-even");
+                    }
+                  );
+                  //为编辑普通帖子时，给标题和帖子内容进行赋值
+                  if(flag === 2){
+                  	var index1 = location.href.indexOf("communityUuid");
+                    var index2 = location.href.lastIndexOf("&");
+                    var communityUuid = location.href.slice(index1+14,index2);
+                    $.ajax({
+                      type: "get",
+                      url: "main?xwl=344FSSF7YSKQ&communityUuid="+communityUuid,
+                      success: function(text){
+                        var data = JSON.parse(text).rows;
+                        //清空标题统计字数50
+                        $('.wordwordCount1').html('');
+                        //显示剩余字数
+                        $('.wordwordCount1').append(50-(data[0].title).length);
+                        //赋值标题
+                        $('#new_title').val(data[0].title);
+                        //赋值内容
+                        ue_new.ready(function() {
+                          this.setContent(data[0].content);           
+                        });
+                        //赋值标签
+                        var arr= (data[0].labels).split(",");  //将该帖子的标签保存在数组中
+                        var arr_IDs= (data[0].labelsID).split(",");  //将该帖子的标签保存在数组中 
+                        var Array=[];  //保存所有标签
+                        window.data_labelArray = [];  //保存修改后标签的数组
+                        window.data_labelIDsArray = arr_IDs; //保存修改后标签的ID数组
+                        var li_arr=$('#label_new>li');
+                        for(var j=0;j<li_arr.length;j++){
+                        	Array.push(li_arr[j].innerHTML);
+                        }
+                        var Array_li=Array.join(',');
+                        for(var i=0;i<Array.length;i++){
+                          for(var n=0;n<arr.length;n++){
+                            if(arr[n]==Array[i]){
+							  data_labelArray.push(Array[i]);
+                              $('#label_new>li:nth-child('+(i+1)+')').addClass("bg-color");
+                            }
+                          } 
+                        }
+                      }
+                    });
+                     //编辑帖子时点击选择标签和取消表标签
+                      $("#label_new").on("click","li",function(){ 
+                        var index = 0;
+                        if($(this).hasClass("bg-color")){
+                            $(this).removeClass("bg-color");
+                            var label_text = $(this).text();//单击的标签中文名
+                            for(var i=0;i<data_labelArray.length;i++){
+                              if(label_text == data_labelArray[i]){
+                                index = i;
+                                break;
+                              }
+                            }
+                            data_labelArray.splice(index,1);
+                            data_labelIDsArray.splice(index,1);
+                          }else{
+                            $(this).addClass("bg-color");
+                            data_labelArray.push($(this).text());
+                            data_labelIDsArray.push($(this).attr("data-labelsID"));
+                          }     
+                      });
+                  }
+                }
+                
+                if(flag === 1 || flag === 3){                    
+                  wordTool.init_notice('#wordCount2'); 
+                  
+                  //发布公告编辑框加载
+                  var ue_notice = UE.getEditor('div_editor_notice',{
+                    toolbars: [ //只显示以下的功能按钮在编辑器的导航栏里
+                     ["bold","italic","underline","strikethrough","forecolor","backcolor","fontsize","fontfamily",
+                      "fontborder","horizontal","lineheight","justify","rowspacing","formatmatch","link","unlink",
+                      "autotypeset","emotion","simpleupload","insertimage","imagefloat","attachment","date","time",
+                      "undo","redo"]
+                    ],
+                    autoHeightEnabled: 350,
+                    autoFloatEnabled: true         
+                  });
+                  ue_notice.ready(function() {
+                    this.execCommand('serverparam',{'erp.id': '{#erp.id#}'});
+                    //Ctrl+Enter快捷键发表新帖或编辑新帖提交
+                    var tag = true;
+                    $('iframe#ueditor_1').contents().on('keydown',function(event){
+                      if(event.ctrlKey && event.which==13 && tag){
+                        tag = false;
+                        $("#btn-sub-notice").click();
+                      }
+                      setTimeout(function(){
+                        tag = true;
+                        },4000);
+                    });
+                    $('iframe#ueditor_0').contents().on('keydown',function(event){
+                      if(event.ctrlKey && event.which==13 && tag){
+                        tag = false;
+                        $("#btn-sub-notice-edit").click();
+                      }
+                      setTimeout(function(){
+                        tag = true;
+                        },4000);
+                    });
+                  });
+                  //编辑公告
+                  if(flag === 3){
+                  	var index1 = location.href.indexOf("communityUuid");
+                    var index2 = location.href.lastIndexOf("&");
+                    var communityUuid_notice = location.href.slice(index1+14,index2);
+                    $.ajax({
+                      type: "get",
+                      url: "main?xwl=344FSSF7YSKQ&communityUuid="+communityUuid_notice,
+                      success: function(text){
+                        var data = JSON.parse(text).rows;
+                        $('#notice_title').val(data[0].title);
+                        ue_notice.ready(function() {
+                          this.setContent(data[0].content);           
+                        });
+                      }
+                    }); 
+                  }           
+                }
+             
+                // tab切换内容
+                layui.use('element', function(){
+                  var element = layui.element; 
+                }); 
+
+                /*  
+                 以下部分为发布新帖
+                */
+                var data = {}; //提交的数据
+                var labelArray = []; //发布新帖-标签记录数组
+                var labelIdArray = []; //发布新帖ID数组记录
+
+                //获取点击的标签内容
+                if(flag == 1){
+                  $("#label_new").on("click","li",function(){ 
+                    var index = 0;
+                    if($(this).hasClass("bg-color")){
+                        $(this).removeClass("bg-color");
+                        var label_text = $(this).text();//单击的标签中文名
+                        for(var i=0;i<labelArray.length;i++){
+                          if(label_text == labelArray[i]){
+                            index = i;
+                            break;
+                          }
+                        }
+                        labelArray.splice(index,1);
+                        labelIdArray.splice(index,1);
+                      }else{
+                        $(this).addClass("bg-color");
+                        labelArray.push($(this).text());
+                        labelIdArray.push($(this).attr("data-labelsID"));
+                      }     
+                  });
+                }
+                  
+                //发表新帖提交表单的数据
+                $("#btn-sub-new").on('click',function(){
+                    //防止被连续点击，先禁用，再释放
+                    $(this).attr("disabled",true);
+                    setTimeout(function(){
+                      $("#btn-sub-new").attr("disabled",false);
+                    },4000);
+                  	//检测是否有昵称资料
+                    if(hasNickname === 1){
+                      return layer.msg("设置资料后才可以发帖！",{shift:6});
+                    }
+                    var tab = "";
+                    data.isNotice = 0;
+                    var title_new = $('#new_title').val().replace(/(^\s*)|(\s*$)/g, "");
+                    data.title =  title_new.replace(/<\/?[^>]*>/g,'');
+                    data.content = ue_new.getContent();
+                    data.labels = labelArray.join(',');
+                    data.labelsID = labelIdArray.join(',');
+                    tab = "普通帖";
+                    var reg = /(<p><br\/><\/p>)*$/;  //过滤掉最后的空格
+                    data.content = data.content.replace(reg,"");
+                    //检测是输入否为空
+                    if(data.title==''){
+                      return layer.msg("请输入标题！",{shift:6});
+                    }
+                    if(data.content==''){
+                      ue_new.focus();
+                      return layer.msg("请输入内容！",{shift:6});
+                     
+                    }
+                    if(data.labels==''){
+                      return layer.msg("请选择标签！",{shift:6});
+                    }
+                    if(data.content.length>10000){
+                      ue_new.focus();
+                      return layer.msg('您输入的内容字数超过范围了！',{shift:6});
+                    }
+                    //提交
+                    $.ajax({
+                      type:'post',
+                      url: 'main?xwl=344CRSTLNIDL',
+                      data: data,
+                      success: function(r){
+                        var data = JSON.parse(text);
+                        if(data.success){
+                          layer.msg('发布成功');
+                          setTimeout(function(){
+                            window.open("/sys/main?xwl=344KO405BH4Z#tab=2","_self"); 
+                          },1000);        
+                        }else{
+                          return layer.msg(data.msg,{shift:6});
+                        }
+                      }
+                   });
+                }); 
+                //编辑新帖提交表单的数据
+                $("#btn-sub-new-edit").on('click',function(){
+                    //防止被连续点击，先禁用，再释放
+                    $(this).attr("disabled",true);
+                    setTimeout(function(){
+                      $("#btn-sub-new-edit").attr("disabled",false);
+                    },4000);
+                  	//检测是否有昵称资料
+                    if(hasNickname === 1){
+                      return layer.msg("设置资料后才可以发帖！",{shift:6});
+                    }
+                    data.communityUuid = communityUuid;
+                    data.isNotice = 0;
+                    var title_new_edit = $('#new_title').val().replace(/(^\s*)|(\s*$)/g, "");
+                    data.title = title_new_edit.replace(/<\/?[^>]*>/g,'');
+                    data.content = ue_new.getContent();
+                    data.labels = data_labelArray.join(',');
+                    data.labelsID = data_labelIDsArray.join(',');
+                    var reg = /(<p><br\/><\/p>)*$/;  //过滤掉最后的空格
+                    data.content = data.content.replace(reg,"");
+                    //检测是输入否为空
+                    if(data.title==''){
+                      return layer.msg("请输入标题！",{shift:6});
+                    }
+                    if(data.content==''){
+                      ue_new.focus();
+                      return layer.msg("请输入内容！",{shift:6});
+                      
+                    }
+                    if(data.labels==''){
+                      return layer.msg("请选择标签！",{shift:6});
+                    }
+                    if(data.content.length>10000){
+                      ue_new.focus();
+                      return layer.msg('您输入的内容字数超过范围了！',{shift:6});
+                    }
+                    //提交
+                    $.ajax({
+                      type:'post',
+                      url: 'main?xwl=344CRSTLNIDL',
+                      data: data,
+                      success: function(r){
+                        var data = JSON.parse(text);
+                        if(data.success){
+                          layer.msg('编辑成功');
+                          setTimeout(function(){
+                            window.open('/sys/main?xwl=344KO405D10C&id='+communityUuid,"_self");  
+                          },1000);
+                        }else{
+                          return layer.msg(data.msg,{shift:6});
+                        }
+                      }
+                   });
+                });
+                //发表公告提交数据
+                $("#btn-sub-notice").on('click',function(){
+                    //防止被连续点击，先禁用，再释放
+                    $(this).attr("disabled",true);
+                    setTimeout(function(){
+                      $("#btn-sub-notice").attr("disabled",false);
+                    },4000);
+                    //检测是否有昵称资料
+                    if(hasNickname === 1){
+                      return layer.msg("设置资料后才可以发帖！",{shift:6});
+                    }
+                    var tab='';
+                    data.isNotice = 1;
+                    var title_notice = $('#notice_title').val().replace(/(^\s*)|(\s*$)/g, "");
+                    data.title =  title_notice.replace(/<\/?[^>]*>/g,'');
+                    data.content = ue_notice.getContent();
+                    data.labels = '公告';
+                    tab = "公告";
+                    var reg = /(<p><br\/><\/p>)*$/;  //过滤掉最后的空格
+                    data.content = data.content.replace(reg,"");
+                    //检测是输入否为空
+                    if(data.title==''){
+                      return layer.msg("请输入标题！",{shift:6});
+                    }
+                    if(data.content==''){
+                      ue_notice.focus();
+                      return layer.msg("请输入内容！",{shift:6});
+                    }
+                    if(data.labels==''){
+                      return layer.msg("请选择标签！",{shift:6});
+                    }
+                    if(data.content.length>10000){
+                      ue_notice.focus();
+                      return layer.msg('您输入的内容字数超过范围了！',{shift:6});
+                    }
+                    //提交
+                    $.ajax({
+                      type:'post',
+                      url: 'main?xwl=344CRSTLNIDL',
+                      data: data,
+                      success: function(r){
+                        var data = JSON.parse(text);
+                        if(data.success){
+                          layer.msg('发布成功');
+                          setTimeout(function(){
+                            window.open("/sys/main?xwl=344KO405BH4Z","_self");
+                          },1000);     
+                        }else{
+                          return layer.msg(data.msg,{shift:6});
+                        }
+                      }
+                   });
+                }); 
+                //编辑公告提交数据
+                $("#btn-sub-notice-edit").on('click',function(){
+                    //防止被连续点击，先禁用，再释放
+                    $(this).attr("disabled",true);
+                    setTimeout(function(){
+                      $("#btn-sub-notice-edit").attr("disabled",false);
+                    },4000);
+                    //检测是否有昵称资料
+                    if(hasNickname === 1){
+                      return layer.msg("设置资料后才可以发帖！",{shift:6});
+                    }
+                    data.communityUuid = communityUuid_notice;
+                  	data.isNotice=1;
+                    var title_notice_edit = $('#notice_title').val().replace(/(^\s*)|(\s*$)/g, "");
+                    data.title = title_notice_edit.replace(/<\/?[^>]*>/g,'');
+                    data.content = ue_notice.getContent();
+                    data.labels = '公告';
+                    data.labelsID = 1;
+                    var reg = /(<p><br\/><\/p>)*$/;  //过滤掉最后的空格
+                    data.content = data.content.replace(reg,"");
+                   //检测是输入否为空
+                   if(data.title==''){
+                      return layer.msg("请输入标题！",{shift:6});
+                    }
+                    if(data.content==''){
+                      ue_notice.focus();
+                      return layer.msg("请输入内容！",{shift:6});                    
+                    }
+                    if(data.labels==''){
+                      return layer.msg("请选择标签！",{shift:6});
+                    }
+                    if(data.content.length>10000){
+                      ue_notice.focus();
+                      return layer.msg('您输入的内容字数超过范围了！',{shift:6});  
+                    }
+                    //提交
+                    $.ajax({
+                      type:'post',
+                      url: 'main?xwl=344CRSTLNIDL',
+                      data: data,
+                      success: function(r){
+                        var data = JSON.parse(text);
+                        if(data.success){
+                          layer.msg('编辑成功');
+                          setTimeout(function(){
+                            window.open('/sys/main?xwl=344KO405D10C&id='+communityUuid_notice,"_self");
+                          },1000);             
+                        }else{
+                          return layer.msg(data.msg,{shift:6});
+                        }
+                      }
+                   });
+                });   
+             }); 
+           });
+         }
+       }
+     });
+  }
+</script>

@@ -1,0 +1,41 @@
+<!-- 我的消息内容 -->
+<script type="text/html" id="n_tpl"> 
+  <ul>
+    {{# if(d.length == 0){}}
+    <div style="text-align:center;line-height:500px;color:#999">暂时没有您的消息<div>
+    {{# }}}
+  	{{# layui.each(d, function(index, item){ }}
+        	{{# var date1 = item.addTime;}}
+            {{# var date2 = new Date();}}
+            {{# var date3 = date2.getTime() - new Date(date1).getTime();}}
+            {{# var days=Math.floor(date3/(24*3600*1000));}}
+            {{# var leave1=date3%(24*3600*1000);}}
+            {{# var hours=Math.floor(leave1/(3600*1000));}}
+            {{# var leave2=leave1%(3600*1000);}}
+            {{# var minutes=Math.floor(leave2/(60*1000));}}
+				<li>
+                    <div>
+                        <div>
+                            <span>{{ item.addName}}</span>
+                            <span>回答了你的问题</span>
+                            <span title="{{ item.title }}"><a href='/sys/main?xwl=344KO405D10C&id={{ item.id }}&replyID={{ item.replyID }}'>{{ item.title }}</a></span>
+                        </div>
+                        <p>
+							{{# if(days>=1){}}
+                            	<span>{{ days}}天前</span>
+                            {{# } }}
+                            {{# if(hours>=1 && hours<24 && days<1){}}
+                            	<span>{{ hours}}小时前</span>
+                            {{# } }}
+                            {{# if(minutes>3 && hours<1 && days<1){}}
+                            	<span>{{ minutes}}分钟前</span>
+                            {{# } }}
+                            {{# if(minutes<3 && hours<1 && days<1){}}
+                            	<span>刚刚</span>
+                            {{# } }}
+                        </p>
+                    </div>
+                </li>
+    {{# }); }}
+  </ul>
+</script>

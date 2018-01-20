@@ -1,0 +1,63 @@
+<script>
+  //封装官方公告的渲染
+  function notice_init(){
+    var notice_tpl = Notice.innerHTML;
+    var notice_view = document.getElementById("notice");
+    layui.use("laytpl", function(){
+      var laytpl = layui.laytpl;
+      laytpl(notice_tpl).render({}, function(html){
+        notice_view.innerHTML = html;
+
+        //官方公告列表的渲染
+        $.ajax({
+          type: "get",
+          url: "main?xwl=344JFOIFHTZU",
+          success: function(text){
+            var notice_length = JSON.parse(text).rows[0].noticeNum;
+            if(notice_length === 0){
+              $("#notice >ul").html("<li style='color:#A4A3A1;text-align:center;font-size:14px;height:58px;line-height:62px;'>暂无公告</li>");         
+            }else{
+              var pages;
+              if((notice_length%8) === 0){
+                pages = (notice_length/8);
+              }else{
+                pages = Math.floor((notice_length/8))+1;
+              }
+              layui.use("flow", function(){
+                var flow = layui.flow;
+                flow.load({
+                  elem: "#notice >ul",  //指定流加载列表容器
+                  isAuto: false,  //是否自动加载
+                  end: " ",  //显示末页内容
+                  done: function(page, next){ //到达临界点，点击加载更多触发下一页
+                    var lis = [];
+                    //请求下一页数据（注意：page是从1开始返回）
+                    $.ajax({
+                      type: "post",
+                      url: "main?xwl=344IUPKIHQ53",
+                      data: {startPages:(page-1)*8, endPages:page*8},  //分页查询
+                      success: function(text){
+                        var data = JSON.parse(text).rows;  
+                        layui.each(data, function(index, item){                            
+                          var targetid = location.href.indexOf("id");
+                          if(targetid === -1){  //首页
+                            lis.push("<li title='"+item.title+"'><a href='/sys/main?xwl=344KO405D10C&id="+item.id+"' target='_blank'>"+ item.title +"</a></li>");
+                          }else{  //详情页
+                            lis.push("<li title='"+item.title+"'><a href='/sys/main?xwl=344KO405D10C&id="+item.id+"' target='_self'>"+ item.title +"</a></li>");
+                          }                                                 
+                        });     
+                        //执行下一页渲染，第二参数为：满足“加载更多”的条件，即后面仍有分页
+                        //pages为Ajax返回的总页数，只有当前页小于总页数的情况下，才会继续出现加载更多
+                        next(lis.join(''), page < pages);                                   
+                      }
+                    });
+                  }
+                });
+              });
+            }
+          }
+        });       
+      });
+    });
+  }
+</script> 

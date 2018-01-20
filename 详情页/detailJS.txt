@@ -1,0 +1,680 @@
+﻿<script>
+  //封装查看浏览记录
+  function scanRecord(communityUuid) {
+    $.get("main?xwl=344ONQNV0GGG", {communityUuid: communityUuid}, function(json) {
+      layui.use("laypage", function() {
+        var laypage = layui.laypage;  //分页
+        laypage.render({
+          elem: "scan_page",  //存放分页的容器
+          count: json.rows.length,  //数据总数
+          limit: 10,  //每页显示的条数
+          groups: 5,  //连续出现的页码个数
+          first: "首页",
+          last: "尾页",
+          layout: ["count", "prev", "page", "next", "skip"],
+          jump: function(obj) {
+            //渲染模板
+            document.getElementById("scan_content").innerHTML = function() {
+              var data = json.rows.concat().splice(obj.curr*obj.limit-obj.limit, obj.limit);
+              var scan_html_li = "";
+              layui.each(data, function(index, item) {
+                scan_html_li += ("<li><span>"+item.addUserCpy+"</span> - <span>"+item.addName+"</span> - ");
+                var now = (new Date()).getTime();                       
+                var updateTime = (new Date(item.updateTime)).getTime();
+                var time = (now - updateTime) / 1000;
+                var scan_time = "";
+                if (time < 1) {  //一秒内
+                  scan_time = "刚刚";
+                } else if (time < 60) {
+                  time = Math.round(time);
+                  if (time == 60) {  //一分钟内
+                    time = "1分钟";
+                    scan_time = (time+"前");
+                  } else {
+                    scan_time = (time+"秒前");
+                  }                            
+                } else if (time < 3600) {  //一小时内
+                  time = Math.round(time / 60);
+                  if (time == 60) {
+                    time = "1小时";
+                    scan_time = (time+"前");
+                  } else {
+                    scan_time = (time+"分钟前");
+                  }
+                } else if (time < 86400) {  //一天内
+                  time = Math.round(time / 3600);
+                  if (time == 24) {
+                    time = "1天";
+                    scan_time = (time+"前");
+                  } else {
+                    scan_time = (time+"小时前");
+                  }
+                } else if (time < 2592000) {  //一个月内
+                  time = Math.round(time / 86400);
+                  if (time == 30) {
+                    time = "1个月";
+                    scan_time = (time+"前");
+                  } else {
+                    scan_time = (time+"天前");
+                  }
+                } else if (time < 31104000) {  //一年内
+                  time = Math.round(time / 2592000);
+                  if (time == 12) {
+                    time = "1年";
+                    scan_time = (time+"前");
+                  } else {
+                    scan_time = (time+"个月前");
+                  }
+                } else {  //超过一年
+                  time = Math.round(time / 31104000);
+                  scan_time = (time+"年前");
+                }
+                scan_html_li += ("<span>"+scan_time+"浏览了该帖</span><span>共浏览了"+item.viewCount+"次</span></li>");
+              });
+              return scan_html_li;
+            }();  //匿名函数，自动调用
+          }
+        });
+      });
+    }, "json");
+  }
+  
+  //封装内容区域的图片、文件、附件等的管理
+  function manageFile(element) {
+    $(element).find("a").attr({"target":"_blank", "title":"点击查看"});
+    $(element).find("img").each(function(i) {
+      $(this).replaceWith("<a lg href='"+ this.src +"' style='cursor:zoom-in'><img src='"+ this.src +"' title='点击查看原图' alt='内容图片' /></a>");
+    });
+  }
+  
+  //封装浏览图片
+  function scanImg(element) {
+    var lg = $(element);
+    lg.show();
+    lg.lightGallery({  
+      mode: "lg-slide",
+      selector: "a[lg]",
+      thumbnail: true,
+      animateThumb: true,
+      showThumbByDefault: true,
+      thumbWidth: 100,
+      thumbHeight: "150px",
+      loop: true,
+      keypress: true,
+      actualSize: true,
+      speed: 600,
+      download: true,  
+      backdropDuration: 150,
+      pause: 3000,
+      share: false,
+      hideBarsDelay: 3000,
+      hash: false,
+      mousewheel: true,
+      appendSubHtmlTo: ""
+    });
+  }
+  
+  //移动鼠标查看用户的信息
+  function scanInfo() {
+    $(".scan").hover(
+      function() {
+        var _this = $(this);
+        var userERPID = _this.attr("data-userERPID");
+        var userID = _this.attr("data-userID");
+        _this.children("div").show();
+        $.get("main?xwl=344WX73R3DQG", {userERPID:userERPID, userID:userID}, function(data) {
+          var info_html = "";
+          var photo = data.rows[0].photo? data.rows[0].photo: "web/imgs/header.png";  
+          info_html += ("<div><img src='"+ photo +"' alt='用户头像' /></div>");
+          info_html += ("<p class='info1'>"+ data.rows[0].nickname +"</p>");
+          if (data.rows[0].isTontisa === 1) {
+            info_html += ("<p class='info1' title='同天下官方认证' style='color:#FFB800'>官方</p>");
+          }
+          if (data.rows[0].userLabel === 1) {
+            info_html += ("<p class='info1' title='小强ERP专家认证' style='color:#f46e65'>专家V"+ data.rows[0].level +"</p>");
+          }
+          if (data.rows[0].job) {
+            info_html += ("<div class='info2'><span>岗位：</span><div style='width:215px;'>"+ data.rows[0].job +"</div></div>");
+          }
+          if (data.rows[0].contactInfo) {
+            info_html += ("<div class='info2'><span>社交账号：</span><div style='width:185px;'>"+ data.rows[0].contactInfo +"</div></div>");
+          }
+          if (data.rows[0].motto) {
+            info_html += ("<div class='info2'><span>座右铭：</span><div style='width:200px;'>"+ data.rows[0].motto +"</div></div>");
+          }
+          info_html += ("<hr />");
+          var top3_dd = "";
+          if (data.rows[0].top3) {
+            var top3_arr = data.rows[0].top3.split(",");
+            var top3Id_arr = data.rows[0].top3_id.split(",");
+            for (var i = 0; i < top3_arr.length; i++) {
+              top3_dd += ("<dd class='info3'><a href='/sys/main?xwl=344KO405D10C&id="+ top3Id_arr[i] +"' target='_blank' title='"+ top3_arr[i] +"'>"+ top3_arr[i] +"</a></dd>");
+            }
+          } else {
+            top3_dd += ("<dd style='margin-top:5px;text-align:center;color:#8C8C8C'>暂无发帖记录</dd>");
+          }                            
+          info_html += ("<dl><dt>最近发帖：</dt>"+ top3_dd +"</dl>");
+          _this.find(".info").empty().append(info_html); 
+         }, "json");
+      },
+      function() {
+        $(this).children("div").hide();
+      }   
+    );    
+  }
+  
+  //封装详情页的渲染
+  function detail_init(communityUuid, admId, isAdmin, hasNickname, replyID) {
+    $.ajax({
+      type: "get",
+      url: "main?xwl=344FSSF7YSKQ&communityUuid="+communityUuid,
+      success: function(text) {
+        if (JSON.parse(text).rows.length === 0) {
+          $("#detail").text("该帖不存在，请选择其他内容！");
+          $("#detail").css({"color":"#A4A3A1", "text-align":"center", "font-size":"16px", "line-height":"368px"});
+          document.title = "小强社区";
+        } else {
+          var data_detail = JSON.parse(text).rows[0];
+          data_detail.isAdmin = isAdmin;  //是否为管理员
+          data_detail.admId = admId;  //是否为本用户
+          data_detail.hasNickname = hasNickname;  //是否已设置资料
+          data_detail.communityUuid = communityUuid;
+          document.title = data_detail.title;  //设置浏览器标题
+
+          //  详情页渲染
+          var detail_tpl = Detail.innerHTML;
+          var detail_view = document.getElementById("detail");
+          layui.use("laytpl", function() {
+            var laytpl = layui.laytpl;
+            laytpl(detail_tpl).render(data_detail, function(html) {
+              detail_view.innerHTML = html;
+
+              //富文本编辑器 
+              UE.delEditor("reply_editor");  //先销毁
+              var reply_editor = UE.getEditor("reply_editor", {
+                                   toolbars: [  //只显示以下的功能按钮在编辑器的导航栏里
+                                               ["bold","italic","underline","strikethrough","forecolor","backcolor","fontsize","fontfamily",
+                                                "fontborder","horizontal","lineheight","justify","rowspacing","formatmatch","link","unlink",
+                                                "autotypeset","emotion","simpleupload","insertimage","imagefloat","attachment","date","time",
+                                                "undo","redo"]
+                                             ],
+                                   initialFrameHeight: 200,
+                                   autoFloatEnabled: true             
+                                 });  
+              //enter+ctrl组合键提交,防止连续敲击
+              var tag = true;
+              $("iframe[id^=ueditor]").contents().on("keydown", function(e) {
+                if (e.ctrlKey && e.which == 13 && tag) {
+                  tag = false;
+                  $("#reply_btn").click();  
+                }
+                setTimeout(function() {
+                  tag = true;
+                },4000);
+              });
+              scanInfo();
+              manageFile("#user_content");
+              //点击浏览原图
+              scanImg("#user_content");
+              //点击查看浏览记录
+              $("#scan >span").click(function() {
+                $(this).next().toggle();
+                if ($(this).next().css("display")  == "block") {
+                  scanRecord(communityUuid);
+                }
+              });
+              //点击空白处可关闭弹窗
+              $("body").on("click", function() {
+                $("#scan > div").hide();
+              });
+              $("#scan").on("click", function(e) {
+                e.stopPropagation();
+              });
+              
+              //  用户回复列表            	
+              if (data_detail.replyCount === 0) {
+                $("#reply_list >ul").html("<li>暂无评论，快来抢沙发吧~</li>");
+                $("#reply_list >ul >li").css({"color":"#A4A3A1", "text-align":"center", "line-height":"150px", "margin-top":"-50px", "font-size":"14px"});
+              } else {                        
+                $.ajax({
+                  type: "get",
+                  url: "main?xwl=344GB4IH6X4Q&communityUuid="+communityUuid,
+                  success: function(text) {
+                    var data_reply = JSON.parse(text).rows;
+                    for (var i = 0; i < data_reply.length; i++) {
+                      data_reply[i].communityUuid = data_detail.id;  //该帖的id
+                      data_reply[i].userId = data_detail.addUserID;  //是否为该帖用户
+                      data_reply[i].isAdmin = isAdmin;  //是否为管理员
+                      data_reply[i].admId = admId;
+                      data_reply[i].erpId = "{#erp.id#}";
+                      data_reply[i].hasNickname = hasNickname;
+                    }     
+              
+                    //评论列表渲染
+                    var reply_list_tpl = Reply_list.innerHTML;
+                    var reply_list_view = document.querySelector("#reply_list >ul");
+                    layui.use("laytpl", function() {
+                      var laytpl = layui.laytpl;
+                      laytpl(reply_list_tpl).render(data_reply, function(html) {
+                        reply_list_view.innerHTML = html; 
+                        
+                        //从我的消息进入详情页，则定位到当前的评论     
+                        if (replyID != undefined) {
+                          var top = $("#"+replyID).offset().top;  //相对浏览器窗口顶部的偏移
+                          $("html, body").animate({scrollTop: top+60}, 800);  //相对滚动条顶部的偏移
+                        }
+                        //如果有【已采纳】的评论，那么其他评论都不显示【采纳】
+                        if ($("#reply_list >ul >li span[class=isAdopt]").length > 0) {
+                          $("#reply_list >ul >li span[class=adopt]").remove();
+                        }
+                        //@回复                     
+                        for (var k = 0; k < data_reply.length; k++) {
+                          if (data_reply[k].atName != null) {
+                            $(".reply_content").eq(k).prepend("<div class='at'>@<span>"+ data_reply[k].atName +"</span></div>").children("p:first").css("display", "inline-block");
+                          }
+                          if (data_reply[k].quoteContent != null) {
+                            var index = data_reply[k].quoteContent.indexOf("</p>");
+                            var quoteContent;
+                            if (index === -1) {  //微信端@回复
+                              quoteContent = data_reply[k].quoteContent;
+                            } else {  //pc端@回复
+                              var count = data_reply[k].quoteContent.match(/<\/p>*/g).length;
+                              if (count > 1) {
+                                quoteContent = data_reply[k].quoteContent.slice(0, index+4) + "<span class='more' title='还有更多的消息'>【更多+】</span>";
+                              } else {
+                                quoteContent = data_reply[k].quoteContent.slice(0, index+4);
+                              }  
+                            }
+                            $(".reply_content").eq(k).append("<div class='quote-content'><div>"+ quoteContent +"</div></div>");
+                          }
+                        }
+                        scanInfo();
+                        manageFile(".reply_content");   
+                        //点击浏览原图
+                        scanImg(".reply_content");  
+                        //回复窗口的富文本编辑器
+                        for (var i = 0; i < data_reply.length; i++) {
+                          UE.delEditor("comment_editor"+i);  //先销毁
+                          UE.getEditor("comment_editor"+i, {
+                            toolbars: [  //只显示以下的功能按钮在编辑器的导航栏里
+                                        ["bold","italic","underline","strikethrough","forecolor","backcolor","fontsize","fontfamily",
+                                         "fontborder","horizontal","lineheight","justify","rowspacing","formatmatch","link","unlink",
+                                         "autotypeset","emotion","simpleupload","insertimage","imagefloat","attachment","date","time",
+                                         "undo","redo"]
+                                      ],
+                            initialFrameHeight: 170,
+                            autoFloatEnabled: true             
+                          });   
+                        }
+                        //enter+ctrl组合键提交,防止连续敲击
+                        $("div[id^=comment_editor]").each(function(i) {
+                          var _this = $(this);
+                          var tag = true;
+                          _this.find("iframe[id^=ueditor]").contents().on("keydown", function(e) {
+                            if (e.ctrlKey && e.which == 13 && tag) {
+                              tag = false;
+                              _this.next().click();
+                            }
+                            setTimeout(function() {
+                              tag = true;
+                            },4000);
+                          });
+                        });                                      
+                        //展开回复窗口
+                        $(".reply").on("click", function() {  
+                          $(this).parent().next().slideToggle(200);
+                          //每一次展开时，先清空编辑器里的内容
+                          var editor_id = $(this).parent().next().children("div[id^=comment_editor]").attr("id");
+                          UE.getEditor(editor_id).execCommand("cleardoc");                  
+                        });
+                        //点击空白处可关闭回复窗口
+                        $("body").on("click", function() {
+                          $(".comment").slideUp(200);
+                        });
+                        $(".reply, .comment, .support, #edui_fixedlayer").on("click", function(e) {
+                          e.stopPropagation();
+                        });
+                                   
+                        //点赞或取消赞
+                        var supports = document.getElementsByClassName("support");
+                        for (var j = 0; j < supports.length; j++) {
+                          supports[j].addEventListener("click", function() {
+                            var _this = this;
+                            var replyUuid = _this.id;
+                            var isLike = _this.getAttribute("data-isLike");              
+                            //请求后台数据
+                            var xhr;
+                            if (window.XMLHttpRequest) {
+                              xhr = new XMLHttpRequest();
+                            } else {
+                              xhr = new ActiveXObject("Microsoft.XMLHTTP");  //低版本的IE
+                            }
+                            xhr.open("post", "main?xwl=344VFW3SNFVR", true);
+                            xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+                            xhr.send("communityUuid="+communityUuid+"&replyUuid="+replyUuid+"&isLike="+isLike);
+                            xhr.onreadystatechange = function() {
+                              if (xhr.readyState == 4 && xhr.status == 200) {
+                                var data = JSON.parse(xhr.responseText);   
+                                if (data.success) {                                 
+                                  if (data.isLike === 1) {  //变为已点赞状态
+                                    _this.style.color = "#C00";
+                                    //点赞后+1图标浮现
+                                    $(_this).children(".add1").show().animate({top: "-20px"}, 400);
+                                    setTimeout(function() {
+                                      _this.firstElementChild.nextElementSibling.style.display = "none";
+                                    }, 500);
+                                  } else if (data.isLike === 0) {  //变为未点赞状态
+                                    _this.style.color = "#999";
+                                    //取消点赞后+1图标重回原来的位置
+                                    _this.firstElementChild.nextElementSibling.style.top = "-10px";
+                                  }     
+                                  _this.setAttribute("data-isLike", data.isLike);
+                                  _this.lastElementChild.textContent = "("+data.likeNum+")";
+                                } else {
+                                  return layer.msg(data.msg,{shift:6});
+                                }
+                              }
+                            };
+                          });
+                        }
+                        //提交评论的回复
+                        $(".comment_btn").click(function(){
+                          var btn = $(this);
+                          //防止被连续点击，先禁用，再释放
+                          btn.attr("disabled",true);
+                          setTimeout(function(){
+                            btn.attr("disabled",false);
+                          },4000);
+                          var parentUuid = btn.attr("id");
+                          var editor_id = btn.prev().attr("id");
+                          var comment_editor = UE.getEditor(editor_id);
+                          var comment_content = comment_editor.getContent(); 
+                          var reg = /(<p><br\/><\/p>)*$/;  //过滤掉最后的空格
+                          comment_content = comment_content.replace(reg,"");
+                          if(comment_content === ""){
+                            comment_editor.focus();
+                            return layer.msg("回复为空，不能提交！",{shift:6});   
+                          } 
+                          if(comment_content.length > 10000){
+                            comment_editor.focus();
+                            return layer.msg("回复的字数不能超过10000字！",{shift:6});      
+                          }
+                          $.post("main?xwl=344GB4IH6UI8", {communityUuid:communityUuid, content:comment_content, parentUuid:parentUuid}, function(data){
+                            if(data.success){
+                              layer.msg(data.msg);
+                              detail_init(communityUuid,admId,isAdmin,hasNickname,replyID);                  
+                              notice_init();
+                            }else{
+                              return layer.msg(data.msg,{shift:6});
+                            }
+                          }, "json");
+                        });
+                        //删除评论
+                        $("#reply_list >ul >li").on("click", "span[class=delete]", function(){  
+                          //超过两分钟则无法删除，管理员除外
+                          var addTime = $(this).attr("data-addTime");
+                          addTime = new Date(addTime).getTime();  //字符串转日期
+                          var nowTime = new Date().getTime();
+                          var second = (nowTime - addTime) / 1000;
+                          if(second > 120 && isAdmin == 0){
+                            return layer.msg("评论超过两分钟，无法删除！",{shift:6});                           
+                          }
+                          var replyUuid = $(this).attr("id");   
+                          var isAdopt = $(this).attr("data-isAdopt"); 
+                          layer.confirm("确定要删除该条评论吗？",{
+                              title: false,
+                              icon: 3,
+                              closeBtn: 0,
+                              shade: 0.5
+                            },function(index){
+                              $.ajax({
+                                type: "post",
+                                url: "main?xwl=344GB4IH8OAC",
+                                data: {communityUuid:communityUuid, replyUuid:replyUuid, isAdmin:isAdmin, isAdopt:isAdopt},
+                                success: function(text){
+                                  var data = JSON.parse(text);
+                                  if(data.success){  
+                                    layer.msg(data.msg);                                                   
+                                    detail_init(communityUuid,admId,isAdmin,hasNickname,replyID);                  
+                                    notice_init();     
+                                  }else{
+                                    return layer.msg(data.msg,{shift:6});
+                                  }
+                                }
+                              });
+                              layer.close(index);
+                            }                                    
+                          );                                       
+                        });
+                        //采纳评论
+                        $("#reply_list >ul >li").on("click", "span[class=adopt]", function(){
+                          var replyUuid = $(this).attr("id"); 
+                          var content = $(this).parent().parent().parent().next().html(); 
+                          layer.confirm("确定要采纳该条评论吗？",{
+                              title: false,
+                              icon: 3,
+                              closeBtn: 0,
+                              shade: 0.5
+                            },function(index){
+                              $.ajax({
+                                type: "post",
+                                url: "main?xwl=344I5WKT96ON",
+                                data: {communityUuid:communityUuid, replyUuid:replyUuid, content:content},
+                                success: function(text){
+                                  var data = JSON.parse(text);                                    
+                                  if(data.success){
+                                    layer.msg(data.msg);
+                                    detail_init(communityUuid,admId,isAdmin,hasNickname,replyID);                  
+                                    notice_init();   
+                                  }else{
+                                    return layer.msg(data.msg,{shift:6});
+                                  }
+                                } 
+                              });
+                              layer.close(index);
+                            }                                    
+                          );                     	
+                        });
+                      });
+                    });
+                  } 					 
+                });
+              }              
+                                       
+              //设置精华
+              $("#set_great").click(function(){
+                layer.confirm("确定要设置为精华帖吗？",{
+                    title: false,
+                    icon: 3,
+                    closeBtn: 0,
+                    shade: 0.5
+                  },function(index){
+                    $.ajax({
+                      type: "post",
+                      url: "main?xwl=344FSSF7WMSU",
+                      data: {communityUuid:communityUuid, title:data_detail.title},
+                      success: function(text){
+                        var data = JSON.parse(text);
+                        if(data.success){
+                          layer.msg(data.msg);
+                          detail_init(communityUuid,admId,isAdmin,hasNickname,replyID);                  
+                          notice_init();   
+                        }else{
+                          return layer.msg(data.msg,{shift:6});
+                        }
+                      }
+                    });
+                    layer.close(index);
+                  }                                    
+                );                     	
+              });
+              //置顶帖子
+              $("#set_top").click(function(){
+                var isTop = $(this).attr("data-isTop"); 
+                layer.confirm("确定要置顶该条帖子吗？",{
+                    title: false,
+                    icon: 3,
+                    closeBtn: 0,
+                    shade: 0.5
+                  },function(index){
+                    $.ajax({
+                      type: "post",
+                      url: "main?xwl=344HBA8WA2UQ",
+                      data: {communityUuid:communityUuid, title:data_detail.title, isTop:isTop},
+                      success: function(text){
+                        var data = JSON.parse(text);        
+                        if(data.success){
+                          layer.msg(data.msg);                    
+                          detail_init(communityUuid,admId,isAdmin,hasNickname,replyID);                  
+                          notice_init();                
+                        }else{
+                          return layer.msg(data.msg,{shift:6});
+                        }
+                      }
+                    });
+                    layer.close(index);
+                  }                                    
+                );                     	
+              });
+              //取消置顶
+              $("#cancel_top").click(function(){
+                var isTop = $(this).attr("data-isTop");
+                layer.confirm("确定要取消置顶吗？",{
+                    title: false,
+                    icon: 3,
+                    closeBtn: 0,
+                    shade: 0.5
+                  },function(index){
+                    $.ajax({
+                      type: "post",
+                      url: "main?xwl=344HBA8WA2UQ ",
+                      data: {communityUuid:communityUuid, title:data_detail.title, isTop:isTop},
+                      success: function(text){
+                        var data = JSON.parse(text);
+                        if(data.success){
+                          layer.msg(data.msg);
+                          detail_init(communityUuid,admId,isAdmin,hasNickname,replyID);                  
+                          notice_init();                                     
+                        }else{
+                          return layer.msg(data.msg,{shift:6});
+                        }
+                      }
+                    });
+                    layer.close(index);
+                  }                                    
+                );                     	
+              });
+              //关闭帖子
+              $("#close").click(function(){
+                layer.confirm("确定要关闭该条帖子吗？",{
+                    title: false,
+                    icon: 3,
+                    closeBtn: 0,
+                    shade: 0.5
+                  },function(index){
+                    $.ajax({
+                      type: "post",
+                      url: "main?xwl=344HBA8W9ZSA",
+                      data: {communityUuid:communityUuid, title:data_detail.title},
+                      success: function(text){
+                        var data = JSON.parse(text);
+                        if(data.success){
+                          layer.msg(data.msg);
+                          detail_init(communityUuid,admId,isAdmin,hasNickname,replyID);                  
+                          notice_init(); 
+                        }else{
+                          return layer.msg(data.msg,{shift:6});
+                        }
+                      }
+                    });
+                    layer.close(index);
+                  }                                    
+                );                     	
+              });
+              //删除帖子、公告
+              $("#delete").click(function(){
+                var isNotice = $(this).attr("data-isNotice");
+                layer.confirm("确定要删除该条帖子吗？",{
+                    title: false,
+                    icon: 3,
+                    closeBtn: 0,
+                    shade: 0.5
+                  },function(index){
+                    $.ajax({
+                      type: "post",
+                      url: "main?xwl=344FSSF7W0C8",
+                      data: {communityUuid:communityUuid, title:data_detail.title},
+                      success: function(text){
+                        var data = JSON.parse(text);
+                        if(data.success){
+                          layer.msg(data.msg); 
+                          if(isNotice === "0"){  //删除的是普通帖
+                            setTimeout(function(){
+                              window.open("/sys/main?xwl=344KO405BH4Z","_self");
+                            },500);
+                          }else if(isNotice === "1"){  //删除的是公告
+                            $("#delete, #set_top, #cancel_top, #reply_btn").addClass("layui-btn-disabled").attr("disabled",true);
+                            $(".delete, .adopt").css({"cursor":"not-allowed","text-decoration":"none","color":"#999"}).click(function(){
+                              return false;
+                            });
+                            notice_init();
+                          }                  
+                        }else{
+                          return layer.msg(data.msg,{shift:6});
+                        }
+                      }
+                    });
+                    layer.close(index);
+                  }                                    
+                );                     	
+              });
+              //编辑帖子、公告
+              $("#edit").click(function(){
+                var isNotice = $(this).attr("data-isNotice");
+                window.open("/sys/main?xwl=344KO405BWNU&communityUuid="+communityUuid+"&isNotice="+isNotice,"_self");
+              });
+              //提交回复
+              $("#reply_btn").on("click", function(){
+                //防止被连续点击，先禁用，再释放
+                $(this).attr("disabled",true);
+                setTimeout(function(){
+                  $("#reply_btn").attr("disabled",false);
+                },4000);
+                //为设置资料不能回复
+                if(hasNickname == 1){
+                  return layer.msg("设置资料后才可以回复！",{shift:6});
+                }
+                var reply_content = reply_editor.getContent(); 
+                var reg = /(<p><br\/><\/p>)*$/;  //过滤掉最后的空格
+                reply_content = reply_content.replace(reg,"");
+                if(reply_content === ""){
+                  reply_editor.focus();
+                  return layer.msg("回复为空，不能提交！",{shift:6});   
+                } 
+                if(reply_content.length > 10000){
+                  reply_editor.focus();
+                  return layer.msg("回复的字数不能超过10000字！",{shift:6});      
+                }
+                $.ajax({
+                  type: "post",
+                  url: "main?xwl=344GB4IH6UI8",
+                  data: {communityUuid:communityUuid, content:reply_content, parentUuid:0},
+                  success: function(text){
+                    var data = JSON.parse(text);
+                    if(data.success){
+                      layer.msg(data.msg);  
+                      detail_init(communityUuid,admId,isAdmin,hasNickname,replyID);                  
+                      notice_init();                                                          
+                    }else{
+                      return layer.msg(data.msg,{shift:6});
+                    }
+                  }
+                });
+              });
+            });
+          });
+        }     
+      }
+    });
+  }
+</script>

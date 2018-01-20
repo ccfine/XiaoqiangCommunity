@@ -1,0 +1,193 @@
+<!-- 详情页模板引擎 -->
+<script type="text/html" id="Detail">
+  <div id="user">
+    <h1>{{ d.title }}</h1>
+    <div>
+      <div>
+        {{# if(d.isTop === 1 && d.isNotice === 0){ }}
+          <span class="top">置顶帖</span>
+        {{# } }}
+        {{# if(d.isEssence === 1 && d.isClose === 1 && d.isNotice === 0){ }}
+          <span class="great">精华帖</span>
+        {{# } }}
+        {{# if((d.isClose === 1 || d.isEssence === 1) && d.isNotice === 0){ }}
+          <span class="resolve">已解决</span>
+        {{# } }}
+        {{# if(d.isClose === 0 && d.isNotice === 0){ }}
+          <span class="unsolve">未解决</span>
+        {{# } }}
+        {{# if(d.isNotice === 1){ }}                                                                                            
+          <span class="notice">公告</span>
+        {{# } }}       
+      </div>
+      <div> 
+        <span title="评论数" class="count"><i class="layui-icon">&#xe63a;</i> {{ d.replyCount }}</span>
+        {{# if(d.isAdmin === 0){ }}
+          <span title="浏览数" class="count"><img src="https://ohp96o3wl.qnssl.com/files/1/file/20171012/browse_1507773719356.png" width="20" height="22" /> {{ d.viewCount }}</span>
+        {{# } }}
+        {{# if(d.isAdmin === 1){ }}
+          <div id="scan">
+            <span title="点击查看浏览记录" class="count"><img src="https://ohp96o3wl.qnssl.com/files/1/file/20171012/browse_1507773719356.png" width="20" height="22" /> {{ d.viewCount }}</span>
+            <div>
+              <div class="triangle"></div>
+              <div class="triangle"></div>
+              <div class="triangle"></div>
+              <div>
+                <div><ul id="scan_content"></ul></div>
+                <div id="scan_page"></div>
+              </div>
+            </div>
+          </div>
+        {{# } }}
+      </div>
+    </div>
+    <div>
+      <div class="scan" data-userERPID="{{ d.erpID }}" data-userID="{{ d.addUserID }}">
+        {{# if(d.photo == null){ }}
+          <img src="web/imgs/header.png" class="photo" />
+        {{# }else{ }}           	
+          <img src="{{ d.photo }}" class="photo" style="border-radius:50%" />
+        {{# } }}
+        <div>
+          <div></div>
+          <div class="triangle1"></div>
+          <div class="triangle1"></div>
+          <div class="triangle1"></div>
+          <div class="info"></div>
+        </div>
+      </div>
+      <span>{{ d.addUserName }}</span>
+      {{# if(d.isTontisa === 1){ }}
+        <span style="color: #FFB800;" title="同天下官方认证">官方</span>
+      {{# } }}
+      {{# if(d.userLabel === 1){ }}
+        <span style="color: #f46e65;" title="小强ERP专家认证">专家V{{ d.level }}</span>
+      {{# } }}
+      {{# if(d.isAdmin === 1){ }}
+        <span style="color:#FF5A49;margin-right:20px">{{ d.addUserCpy }}</span>
+      {{# } }}
+      {{# var index = d.addTime.lastIndexOf(":"); }}
+      <span>{{ d.addTime.slice(0,index) }}</span>
+      <div>
+        {{# if(d.isNotice === 0){ }}
+          {{# var label_arr = d.labels.split(","); }}                     
+          {{# layui.each(label_arr, function(i, item){ }}
+            <span>{{ item }}</span>
+          {{# }); }} 
+        {{# } }}
+      </div>
+    </div>
+    <div id="user_content">{{ d.content }}</div>
+  </div>
+  <div id="oper_btn">
+    {{# if(d.isAdmin === 1){ }}
+      {{# if(d.isEssence === 0 && d.isClose === 1 && d.isNotice === 0){ }}
+        <button id="set_great" class="layui-btn layui-btn-small layui-btn-normal"><i class="layui-icon" style="font-size:16px !important">&#xe600;</i>设置精华</button>
+      {{# } }}
+      {{# if(d.isTop === 0){ }}
+        <button id="set_top" class="layui-btn layui-btn-small" data-isTop="{{ d.isTop }}" style="background-color:#393D49"><i class="layui-icon">&#xe619;</i>设置置顶</button>
+      {{# }else if(d.isTop === 1){  }}
+        <button id="cancel_top" class="layui-btn layui-btn-small layui-btn-warm" data-isTop="{{ d.isTop }}"><i class="layui-icon" style="vertical-align:middle">&#xe61a;</i>取消置顶</button>
+      {{# } }}
+    {{# } }}
+    {{# if(d.isAdmin === 1 || d.addUserID == d.admId){ }}
+      {{# if(d.isClose === 0 && d.isNotice === 0){ }}
+        <button id="close" class="layui-btn layui-btn-small" style="background-color:#5FB878;padding-left:5px"><i class="layui-icon" style="margin-right:-2px">&#xe618;</i>关闭帖子</button>
+      {{# } }}
+      {{# if(d.isNotice === 0){ }}
+        <button id="delete" class="layui-btn layui-btn-danger layui-btn-small" data-isNotice="{{ d.isNotice }}"><i class="layui-icon">&#xe640;</i>删除帖子</button>
+      {{# } }}
+      {{# if(d.isNotice === 1){ }}
+        <button id="delete" class="layui-btn layui-btn-danger layui-btn-small" data-isNotice="{{ d.isNotice }}"><i class="layui-icon">&#xe640;</i>删除公告</button>
+      {{# } }}
+    {{# } }}
+    {{# if(d.addUserID == d.admId && d.isNotice === 0){ }}
+      <button id="edit" class="layui-btn layui-btn-small" data-isNotice="{{ d.isNotice }}"><i class="layui-icon" style="font-size:14px !important">&#xe639;</i> 编辑帖子</button>
+    {{# } }}
+    {{# if(d.isAdmin === 1 && d.isNotice === 1){ }}
+      <button id="edit" class="layui-btn layui-btn-small" data-isNotice="{{ d.isNotice }}"><i class="layui-icon" style="font-size:14px !important">&#xe639;</i> 编辑公告</button>
+    {{# } }}
+  </div>
+  <div>    
+    <div id="reply_list">
+      <b>回帖</b>
+      <ul></ul>
+    </div>
+    <!--富文本编辑器-->
+    <div id="reply_editor" type="text/plain"></div>
+    {{# if(d.hasNickname == 1){ }}
+      <div id="validate_mask">
+        您需要设置资料后才可以回复，请立即<a href="/sys/main?xwl=344KO405D4IA&communityUuid={{ d.communityUuid }}&tag=2">设置资料</a>
+      </div>
+    {{# } }}
+    <button class="layui-btn" id="reply_btn" title="按 Ctrl + Enter 可提交回复"><i class="layui-icon">&#xe609;</i> 提交回复</button>
+  </div>
+</script>
+
+<!-- 详情页评论列表模板引擎 -->
+<script type="text/html" id="Reply_list">
+  {{# layui.each(d, function(i, item){ }}
+    <li id="{{ item.id }}">
+      <div>
+        <div class="scan" data-userERPID="{{ item.erpID }}" data-userID="{{ item.addUserID }}">
+          {{# if(item.photo == null){ }}
+            <img src="web/imgs/header.png" width="50" height="50" hspace="10" />
+          {{# }else{ }}           	
+            <img src="{{ item.photo }}" style="width:46px;height:46px;border-radius:50%;margin:0 10px 0 15px;" />
+          {{# } }}
+          <div style="top:-40px;">
+            <div style="top:30px;height:65px;"></div>
+            <div class="triangle1" style="top:55px;"></div>
+            <div class="triangle1" style="top:55px;"></div>
+            <div class="triangle1" style="top:55px;"></div>
+            <div class="info"></div>
+          </div>
+        </div>
+        <div>
+          <div>
+            <span>{{ item.addUserName }}</span>
+            {{# if(item.isTontisa === 1){ }}
+              <span style="color: #FFB800;" title="同天下官方认证">官方</span>
+            {{# } }}
+            {{# if(item.userLabel === 1){ }}
+              <span style="color: #f46e65;" title="小强ERP专家认证">专家V{{ item.level }}</span>
+            {{# } }}
+            {{# if(item.isAdmin === 1){ }}
+              <span style="color: #FF5A49;margin-right:20px;">{{ item.addUserCpy }}</span> 
+            {{# } }}                     
+            {{# if(item.isAdmin === 1 || (item.addUserID == item.admId && item.erpId == item.erpID)){ }}
+              <span id="{{ item.id }}" class="delete" data-isAdopt="{{ item.isAdopt }}" data-addTime="{{ item.addTime }}">删除</span>
+            {{# } }}
+            {{# if(item.isAdmin === 1 || item.userId == item.admId){ }}
+              {{# if(item.isAdopt === 0){ }}
+                <span id="{{ item.id }}" class="adopt">采纳</span> 
+              {{# } }} 
+            {{# } }}  
+            {{# if(item.isAdopt === 1){ }}
+              <span class="isAdopt"><img src="https://cdn.op110.com.cn/lib/imgs/xqbbs/accepted.png" /></span> 
+            {{# } }}                                        
+          </div>
+          {{# var index = item.addTime.lastIndexOf(":"); }}
+          <span>{{ item.addTime.slice(0,index) }}</span>
+        </div>
+      </div>
+      <div class="reply_content">{{ item.content }}</div>
+      {{# if(item.hasNickname === 0){ }}
+        <div>
+          {{# if(item.isLike === 0){ }}
+            <span id="{{ item.id }}" class="support" data-isLike="{{ item.isLike }}" style="color:#999"><i class="layui-icon">&#xe6c6;</i> <span class="add1">+ 1</span>点赞<span>({{ item.likeNum }})</span></span>
+          {{# }else{ }}
+            <span id="{{ item.id }}" class="support" data-isLike="{{ item.isLike }}" style="color:#C00"><i class="layui-icon">&#xe6c6;</i> <span class="add1">+ 1</span>点赞<span>({{ item.likeNum }})</span></span>
+          {{# } }}  
+          <span class="reply"><i class="layui-icon">&#xe611;</i> 回复</span>
+        </div>
+        <div class="comment">
+          <!--富文本编辑器-->
+          <div id="comment_editor{{ i }}" type="text/plain"></div>
+          <button id="{{ item.id }}" class="layui-btn layui-btn-small comment_btn" title="按 Ctrl + Enter 可提交回复"><i class="layui-icon">&#xe609;</i> 提交回复</button>
+          <div class="clear"></div>
+        </div> 
+      {{# } }}
+    </li>
+  {{# }); }}
+</script>

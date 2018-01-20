@@ -1,0 +1,97 @@
+<script type="text/html" id="Publish">
+   <div class="layui-container fly-marginTop left-distance" >
+       <div class="fly-panel" style="padding-top:5px;">
+           <div class="layui-form layui-form-pane">
+               <div class="layui-tab layui-tab-brief" style="overflow-y:auto">
+                  <!--tab标签栏-->
+                  <ul class="layui-tab-title">
+                      {{# if(d.flag === 1){ }}
+                      	<li class="layui-this tab-list">发表新帖</li>
+                      {{# }else if(d.flag === 2){ }}
+                        <li class="layui-this tab-list">编辑帖子</li>
+                      {{# } }}
+                      {{# if(d.isAdmin == 1){}}
+                      	{{# if(d.flag === 1){ }}
+                      	  <li class="tab-list">发表公告</li>
+                        {{# }else if(d.flag === 3){ }}
+                          <li class="tab-list layui-this">编辑公告</li>
+                        {{# } }}
+                      {{# } }}
+                  </ul>
+                  <!--帖子内容区域-->
+                  <div class="layui-form layui-tab-content" id="LAY_ucm" style="padding:20px 0;">
+                    {{# if(d.flag === 1 || d.flag === 2){ }}
+                      <div class="layui-tab-item layui-show">                     	
+                          <!--输入标题框-->
+                          <div class="layui-row layui-form-item">
+                              <div>
+                                 <label for="L_title" class="layui-form-label">标题</label>
+                              </div>
+                              <div class="layui-input-block" id="wordCount1">
+                                  <input type="text" name="title" id="new_title" class="layui-input" required lay-verify="required" autocomplete="off">
+                              </div>
+                          </div>
+                          <!-- 富文本编辑器-->
+                          <div id="div_editor_new" type="text/plain" style="width:100%;height:300px;"></div>
+                          <!-- 标签列  -->
+                          <div class="choice-tag">选择标签：</div>
+                          <ul class="choice-tag-list" id="label_new"></ul>
+                          {{# if(d.flag === 1){ }}
+                          	  <div class="layui-form-item">
+                                  <button title="按 Ctrl+Enter 提交" class="layui-btn" id="btn-sub-new"><i class="layui-icon">&#xe609;</i> 立即发表</button>
+                              </div>
+                          {{# } }}
+                          {{# if(d.flag === 2){ }}
+                          	  <div class="layui-form-item">
+                                  <button title="按 Ctrl+Enter 提交" class="layui-btn" id="btn-sub-new-edit"><i class="layui-icon">&#xe609;</i> 保存修改</button>
+                              </div>
+                          {{# } }}
+                      </div>
+                    {{# } }}
+                    {{# if(d.flag === 1){ }}
+                      <!-- tab切换发布公告内容 -->
+                      <div class="layui-tab-item">
+                        <div class="layui-row layui-form-item">
+                            <div>
+                              <label for="L_title" class="layui-form-label">标题</label>
+                            </div>
+                            <div class="layui-input-block" id="wordCount2">
+                              <input type="text" name="title" id="notice_title" class="layui-input" required lay-verify="required" autocomplete="off">
+                            </div>
+                        </div>
+                        <!-- 富文本编辑器-->
+                        <div id="div_editor_notice" type="text/plain" style="width:100%;height:300px;"></div>
+                        <div class="layui-form-item" style="margin-top:20px">
+                            <button title="按 Ctrl+Enter 提交" class="layui-btn" id="btn-sub-notice"><i class="layui-icon">&#xe609;</i> 立即发表</button>
+                        </div>
+                     </div>
+                   {{# } }}
+                   {{# if(d.flag === 3){ }}
+                     <!-- tab切换发布公告内容 -->
+                     <div class="layui-tab-item layui-show">
+                        <div class="layui-row layui-form-item">
+                            <div>
+                              <label for="L_title" class="layui-form-label">标题</label>
+                            </div>
+                            <div class="layui-input-block" id="wordCount2">
+                              <input type="text" name="title" id="notice_title" class="layui-input" required lay-verify="required" autocomplete="off">
+                            </div>
+                        </div>
+                        <!-- 富文本编辑器-->
+                        <div id="div_editor_notice" type="text/plain" style="width:100%;height:300px;"></div>
+                        <div class="layui-form-item" style="margin-top:20px">
+                            <button title="按 Ctrl+Enter 提交" class="layui-btn" id="btn-sub-notice-edit"><i class="layui-icon">&#xe609;</i> 保存修改</button>
+                        </div>
+                     </div>
+                   {{# } }}
+               </div>
+             </div>
+          </div>
+       </div>
+    </div>
+    {{# if(d.hasNickname == 1){ }}
+      <div id="validate_mask">
+        您需要设置资料后才可以回复，请立即<a href="/sys/main?xwl=344KO405D4IA&tag=1">设置资料</a>
+      </div>
+    {{# } }}
+</script>

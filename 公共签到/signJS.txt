@@ -1,0 +1,11 @@
+<script>
+  //点击【说明】，则弹出说明窗口
+  $("#instruction-btn").on("click", function () {
+    $("#instruction-mask, #instruction").show();
+  });
+  
+  //关闭说明窗口
+  $("#instruction-mask, #instruction-close").on("click", function () {
+    $("#instruction-mask, #instruction").hide();
+  });
+</script>

@@ -1,0 +1,722 @@
+<script>
+  //上传头像
+  function upload_header(src){    
+    var options = {
+      thumbBox: ".thumbBox",
+      spinner: ".spinner",
+      imgSrc: src
+    }
+    var cropper = $(".imageBox").cropbox(options);
+    $("#cropper-input").on("change", function(){  //点击上传头像
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        options.imgSrc = e.target.result;
+        cropper = $(".imageBox").cropbox(options);
+      }
+      reader.readAsDataURL(this.files[0]);
+    });
+    $("#btnCrop").on("click", function(){  //开始上传
+      var img = cropper.getDataURL().replace(/^data\:image\/[a-z]*\;base64\,/,"");
+      $.ajax({
+        type: "get",
+        url: "main?xwl=344XCOIDYRYZ",
+        dataType: "json",
+        success: function(data){   
+          var xhr;
+          if(window.XMLHttpRequest){
+            xhr = new XMLHttpRequest();
+          }else{
+            xhr = new ActiveXObject("Microsoft.XMLHTTP");  //低版本的IE
+          }
+          xhr.open("post", "http://up-z0.qiniu.com/putb64/-1", true);  
+          xhr.setRequestHeader("Content-Type", "application/octet-stream");
+          xhr.setRequestHeader("Authorization", "UpToken "+data.token);
+          xhr.send(img);
+          xhr.onreadystatechange = function(){
+            if(xhr.readyState == 4 && xhr.status == 200){
+              var domain;  //线上和线下的域名不同
+              if(location.href.indexOf("dev.") != -1){
+                domain = "https://ohp96o3wl.qnssl.com/";
+              }else{
+                domain = "https://ohp9e2kan.qnssl.com/";
+              }
+              document.getElementById("cropped-img").value = domain + JSON.parse(xhr.responseText).key;
+              if(document.getElementById("cropped-img").value != ""){
+                return layer.msg("上传成功");                  
+              }else{
+                return layer.msg("上传失败！",{shift: 6});
+              }
+            }
+          }
+        }
+      });
+    });
+    //禁止预览图片拖动
+    $("#thumbBox").mousemove(function(e){
+      e.stopPropagation();
+    });
+    //禁止预览图片放大缩小
+    $("#thumbBox").mousewheel(function(e){
+      e.stopPropagation();
+    });
+  }
+  
+  //我的消息条数
+  function my_message(){
+    if($("#number").text() > 0){
+      $("#message").css("visibility","visible");
+    }else if($("#number").text() == 0){
+      $("#message").css("visibility","hidden");
+    }
+    if($("#number").text() > 99){
+      $("#number").text("99+");
+    }
+    $("#message").text($("#number").text());
+  }
+  
+  function home_init(){
+    $.ajax({
+      type: "get",
+      url: "main?xwl=344ONQNV09OL",
+      success: function(text){
+         var data = JSON.parse(text);
+         var isAdmin = data.isAdmin;
+         var hasNickName = data.hasNickname;
+         var admId = '{#erp.adm.id#}';
+         data.admId = admId;
+         if(data.isERPBlacklist === 1 || data.isUserBlacklist === 1){ 
+            alert("你没有权限访问！");        
+            window.close();
+          }else{
+            layui.use("laytpl",function(){
+              var laytpl = layui.laytpl;
+              var Personal_tpl = Personal_center.innerHTML;
+              var Personal_view = document.getElementById("section");
+              laytpl(Personal_tpl).render(data, function(html){
+                Personal_view.innerHTML = html;
+                
+                if(hasNickName == 0){  //已设置资料      
+                  //我的消息条数
+                  setTimeout(my_message,500);
+                  setInterval(my_message,30000);
+                  
+                  //资料设置
+                  $.ajax({
+                    type:"get",
+                    url:"main?xwl=344Q6AGRMFBI",
+                    success:function(text){
+                      var data = JSON.parse(text).rows;
+                      $('#L_name').val(data[0].nickname);
+                      $('#L_company').val(data[0].cpyShortName);
+                      $('#L_job').val(data[0].job);
+                      $('#L_socia').val(data[0].contactInfo);
+                      $('#L_sign').val(data[0].motto);
+                      $('#R_mobile').val(data[0].tel);
+                      $('#R_name').val(data[0].trueName);
+                      $("#L_name").attr("userID",data[0].userID);
+                      $("#cropped-img").val(data[0].photo);
+                      upload_header(data[0].photo || "web/imgs/header.png");
+                    }
+                  });
+                  
+                  //我的消息
+                  $.ajax({
+                    type: "get",
+                    url: "main?xwl=344GB4IH9WPR",
+                    success: function(text){
+                      var data = JSON.parse(text).rows;
+                      var news_tpl = n_tpl.innerHTML;
+                      var news_view = document.getElementById("news_msg");
+                      layui.use("laytpl",function(){
+                        var laytpl = layui.laytpl;
+                        laytpl(news_tpl).render(data, function(html){
+                            news_view.innerHTML = html;
+                        });
+                      });
+                     }
+                  });
+                  
+                  //我的发帖
+                  $.ajax({
+                    type: "get",
+                    url: "main?xwl=344NFX0PVUHU",
+                    success: function(text){   //渲染模版
+                        var data = JSON.parse(text).rows;        
+                        var my_post_count = 0;     //我的帖子数
+                        var my_post_count_arr = [];  //我的帖子
+                        for(var j=0; j<data.length; j++){
+                          my_post_count++;
+                          my_post_count_arr.push(data[j]); 
+                        }
+                        //如果数据为0，提示还没有发布帖子
+                        if(my_post_count === 0){
+                          $('#post>div:nth-child(3)').append('<div>您还没有发布帖子哦，快去发帖吧</div>');
+                          $('#post>div:nth-child(3)').css({"line-height":"500px","text-align":"center","color":"#999"});
+                          $('#my_post_page').css("display","none");
+                        }else{
+                          layui.use("laypage",function(){
+                            var laypage = layui.laypage;  //分页
+                            laypage.render({
+                              elem: "my_post_page",  //存放分页的容器
+                              count: my_post_count,  //数据总数
+                              limit: 10,  //每页显示的条数
+                              groups: 5,  //连续出现的页码个数
+                              first: "首页",
+                              last: "尾页",
+                              layout: ["count","prev","page","next","skip"],
+                              jump: function(obj){
+                                  //渲染模板
+                                  document.getElementById("LAY_msg").innerHTML = function(){
+                                      var my_post_html = "";
+                                      var post_html_li = "";
+                                      var Data = my_post_count_arr.concat().splice(obj.curr*obj.limit - obj.limit, obj.limit);
+                                      layui.each(Data, function(index, item){
+
+                                        var date1 = item.addTime;
+                                        var date2 = new Date();
+                                        var date3 = date2.getTime() - new Date(date1).getTime();
+                                        var days=Math.floor(date3/(24*3600*1000));
+                                        var leave1=date3%(24*3600*1000);
+                                        var hours=Math.floor(leave1/(3600*1000));
+                                        var leave2=leave1%(3600*1000);
+                                        var minutes=Math.floor(leave2/(60*1000));
+
+                                        post_html_li += ("<li><div><div>");
+                                        if(item.isClose === 0){
+                                          post_html_li += ("<span class='weijie-status'>未解决</span>");
+                                        }
+                                        if(item.isClose === 1){
+                                          post_html_li += ("<span class='yijie-status'>已解决</span>");
+                                        }
+                                          post_html_li += ("<span title='"+item.title+"'><a href='/sys/main?xwl=344KO405D10C&id="+item.id+"'>"+ item.title +"</a></span>");
+                                        if(days>=1){
+                                          post_html_li += ("<span> "+ days +'天前'+"</span>");
+                                        }
+                                        if(hours>=1 && hours<24 && days<1){
+                                          post_html_li += ("<span> "+ hours +'小时前'+"</span>");
+                                        }
+                                        if(minutes>3 && hours<1 && days<1){
+                                          post_html_li += ("<span> "+ minutes +'分钟前'+"</span>");
+                                        }
+                                        if(minutes<3 && hours<1 && days<1){
+                                          post_html_li += ("<span>刚刚</span>");
+                                        }
+                                          post_html_li += ("<span>"+ item.viewCount+ '阅/'+ item.replyCount+ '答'+"</span></div></div></li>");     
+                                      });            	
+                                      my_post_html += "<ul>"+post_html_li+"</ul>";
+                                      return my_post_html;
+                                  }();  //匿名函数，自动调用
+                                 }
+                              });
+                            });
+                          }
+                        }
+                  });
+                  
+                  //我的回帖
+                  $.ajax({
+                    type: "get",
+                    url: "main?xwl=344GB4IH9T5S",
+                    success: function(text){
+                      var data = JSON.parse(text).rows;        
+                      data.admId="{#erp.adm.id#}";  //用户id
+                      var reply_count=0;     //我的回帖数
+                      var reply_count_arr=[];  //我的回帖
+                      for(var j=0; j<data.length; j++){
+                        if(data[j].addUserID != data.admId){  //我的回帖
+                          reply_count++;
+                          reply_count_arr.push(data[j]);
+                        }     
+                      }
+
+                    //如果回帖没有数据则提示
+                    if(reply_count===0){
+                        $('#post>div:nth-child(4)').append('<div>您还没有回帖哦，快去回帖吧</div>');
+                        $('#post>div:nth-child(4)').css({"line-height":"500px","text-align":"center","color":"#999"});
+                        $('#reply_page').css("display","none");
+                    }else{
+                      layui.use("laypage",function(){
+                        var laypage = layui.laypage;  //分页
+                        laypage.render({
+                            elem: "reply_page",  //存放分页的容器
+                            count: reply_count,  //数据总数
+                            limit: 10,  //每页显示的条数
+                            groups: 5,  //连续出现的页码个数
+                            first: "首页",
+                            last: "尾页",
+                            layout: ["count","prev","page","next","skip"],
+                            jump: function(obj){
+                                //渲染模板
+                                document.getElementById("reply_msg").innerHTML = function(){
+                                    var reply_html = "";
+                                    var reply_html_li = "";
+                                    var Data = reply_count_arr.concat().splice(obj.curr*obj.limit - obj.limit, obj.limit);
+                                    layui.each(Data, function(index, item){
+
+                                    //计算时间
+                                    var date1 = item.addTime;
+                                    var date2 = new Date();
+                                    var date3 = date2.getTime() - new Date(date1).getTime();
+                                    var days=Math.floor(date3/(24*3600*1000));
+                                    var leave1=date3%(24*3600*1000);
+                                    var hours=Math.floor(leave1/(3600*1000));
+                                    var leave2=leave1%(3600*1000);
+                                    var minutes=Math.floor(leave2/(60*1000));
+
+                                      reply_html_li += ("<li><div><div>");
+                                      if(item.isClose === 0){
+                                        reply_html_li += ("<span class='weijie-status'>未解决</span>");
+                                      }
+                                      if(item.isClose === 1){
+                                        reply_html_li += ("<span class='yijie-status'>已解决</span>");
+                                      }
+                                        reply_html_li += ("<span title='"+item.title+"'><a href='/sys/main?xwl=344KO405D10C&id="+item.id+"'>"+ item.title +"</a></span>");
+                                      if(days>=1){
+                                        reply_html_li += ("<span> "+ days +'天前'+"</span>");
+                                      }
+                                      if(hours>=1 && hours<24 && days<1){
+                                        reply_html_li += ("<span> "+ hours +'小时前'+"</span>");
+                                      }
+                                      if(minutes>3&& hours<1 && days<1){
+                                        reply_html_li += ("<span> "+ minutes +'分钟前'+"</span>");
+                                      }
+                                      if(minutes<3 && hours<1 && days<1){
+                                        reply_html_li += ("<span>刚刚</span>");
+                                      }
+                                        reply_html_li += ("<span>"+ item.viewCount+ '阅/'+ item.replyCount+ '答'+"</span></div></div></li>");     
+                                    });            	
+                                    reply_html += "<ul>"+reply_html_li+"</ul>";
+                                    return reply_html;
+                                }();  //匿名函数，自动调用
+                              }
+                            });               
+                         });
+                        }         
+                      }
+                  }); 
+                  
+                    //帖子统计
+                    $.ajax({
+                        type:"get",
+                        url:"main?xwl=344HBA8W91QK",
+                        success: function(text){
+                        var data = JSON.parse(text).rows; 
+                         $.ajax({
+                          type:"get",
+                          url:"main?xwl=344COKZIA060",
+                          success: function(text){
+                            var data=JSON.parse(text).rows;
+                            for(var i=0;i<data.length;i++){
+                              $('#label').append('<li class="layui-anim" data-anim="layui-anim-scaleSpring" data-labelsID='+data[i].id+'>'+data[i].labelName+'</li>');
+                            }
+                          }
+                        });
+
+                        var total_count=0;     //我的回帖数
+                        var total_count_arr=[];  //我的回帖
+
+                        for(var j=0; j<data.length; j++){
+                           //我的回帖
+                            total_count++;
+                            total_count_arr.push(data[j]);     
+                        }
+
+                        //如果回帖没有数据则提示
+                        if(total_count===0){
+                          $('#post>div:nth-child(4)>ul:nth-child(2)').append('<div>您还没有回帖哦，快去回帖吧</div>');
+                          $('#post>div:nth-child(4)>ul:nth-child(2)').css({"line-height":"500px","text-align":"center","color":"#999"});
+                          $('#total_page').css("display","none");
+                        }else{
+                          total(data);
+                        }
+                        //鼠标悬停事件
+                        $('.layui-anim').hover(
+                          function(){
+                            $(this).addClass("mouse-even");
+                          },
+                          function(){
+                            $(this).removeClass("mouse-even");
+                          }
+                        );
+
+                       //点击标签显示相应的所含该标签的帖子
+                       $('#label').on("click","li",function(){
+                         $(this).addClass("label_link");
+                         $(this).siblings().removeClass("label_link");
+                         var labelID=$(this).attr('data-labelsID');
+                         $.ajax({
+                              type:"get",
+                              url:"main?xwl=344HBA8W91QK",
+                              data:{labelsID:labelID},
+                              success: function(text){
+                              var data = JSON.parse(text).rows;
+
+                              if(total_count===0){
+                                  $('#total_msg>ul').append('<div>您还没有回帖哦，快去回帖吧</div>');
+                                  $('#total_msg>ul').css({"line-height":"500px","text-align":"center","color":"#999"});
+                                  $('#total_page').css("display","none");
+                              }else{
+                                total(data);
+                              }
+                             }  
+                         });              
+                     });
+
+                     //点击标签"全部"，显示所有的帖子
+                       $('#label').on("click","span",function(){
+                         $('#label>li').removeclass("label_link");
+                         $.ajax({
+                              type:"get",
+                              url:"main?xwl=344HBA8W91QK",
+                              success: function(text){
+                              var data = JSON.parse(text).rows;
+                              if(total_count===0){
+                                $('#post>div:nth-child(4)>ul:nth-child(2)').append('<div>您还没有回帖哦，快去回帖吧</div>');
+                                $('#post>div:nth-child(4)>ul:nth-child(2)').css({"line-height":"500px","text-align":"center","color":"#999"});
+                                $('#total_page').css("display","none");
+                              }else{
+                                total(data);
+                              }                  
+                             }  
+                          });              
+                       });
+                    }
+                  });
+                }else{
+                  upload_header("web/imgs/header.png");
+                }
+                
+                layui.use("element", function(){
+                  var element = layui.element;  //tab切换  	 
+                });
+                //确认保存提交数据
+                $('#btn_page1').on('click',function(){
+                  //防止被连续点击，先禁用，再释放
+                  $(this).attr("disabled",true);
+                  setTimeout(function(){
+                    $("#btn_page1").attr("disabled",false);
+                  },4000);
+                  info_submit();
+                });
+                //实名认证提交数据
+                $('#btn_page3').on('click',function(){
+                  //防止被连续点击，先禁用，再释放
+                  $(this).attr("disabled",true);
+                  setTimeout(function(){
+                    $("#btn_page3").attr("disabled",false);
+                  },4000);
+                  info_submit();
+                });
+          
+                
+                //日志记录
+                //获取当前时间
+                Date.prototype.format = function (format) {
+                  var args = {
+                     "M+": this.getMonth() + 1,
+                     "d+": this.getDate(),
+                     "h+": this.getHours(),
+                     "m+": this.getMinutes(),
+                     "s+": this.getSeconds(),
+                     "q+": Math.floor((this.getMonth() + 3) / 3),  //quarter
+                     "S": this.getMilliseconds()
+                  };
+                  if (/(y+)/.test(format))
+                     format = format.replace(RegExp.$1, (this.getFullYear() + "").substr(4 - RegExp.$1.length));
+                  for (var i in args) {
+                     var n = args[i];
+                     if (new RegExp("(" + i + ")").test(format))
+                       format = format.replace(RegExp.$1, RegExp.$1.length == 1 ? n : ("00" + n).substr(("" + n).length));
+                  }
+                   return format;
+                 };
+                 var startTime = '2017-01-01 00:00:00';   //默认的开始时间
+                 var endTime = new Date().format("yyyy-MM-dd hh:mm:ss"); //结束时间为当前时间
+                      $.ajax({
+                        type: "post",
+                        url: "main?xwl=344I5WKT9IO7",
+                        data:{startTime:startTime,endTime:endTime},
+                        success: function(text){
+                          var data = JSON.parse(text).rows;
+                          for(var i=0;i<data.length;i++){
+                            data[i].operation = delHtmlTag(data[i].operation);
+                          }
+                          //日期时间渲染
+                          layui.use("laydate",function(){
+                            var laydate = layui.laydate;
+                              //时间选择器
+                              laydate.render({
+                                elem: '#test1',
+                                type: 'datetime'
+                              });
+                              laydate.render({
+                                elem: '#test2',
+                                type: 'datetime'
+                              });
+                            });
+                          //如果数据为0，提示还没有发布帖子
+                          var log_count=0;       //日志记录数
+                          var log_count_arr=[];  //日志记录
+
+                          for(var j=0; j<data.length; j++){
+                            log_count++;
+                            log_count_arr.push(data[j]);   
+                          }
+                          if(log_count===0){
+                            $('#post>div:nth-child(5)').append('<div>暂无日志记录</div>');
+                            $('#post>div:nth-child(5)').css({"line-height":"500px","text-align":"center","color":"#999"});
+                            $('#log_page').css("display","none");
+                          }else{
+                            log(data);
+                          }
+                          //按搜索时间段查看日志记录
+                          $('#log_search').on("click","i",function(){
+                            search(); 
+                          });
+                          //输入时间后回车搜索查看日志记录
+                          $('#test2').keydown(function(e){
+                            if(e.keyCode === 13 || e.which === 13){  //兼容火狐的回车事件
+                              search(); 
+                            }
+                          });     
+                        }              
+                      });
+                });  
+           });   
+         }
+       }
+    });
+  }
+  //帖子统计的分页方法
+  function total(data){
+    var total_count=0;       //帖子统计数
+    var total_count_arr=[];  //统计帖子
+
+    for(var j=0; j<data.length; j++){
+       //我的回帖
+        total_count++;
+        total_count_arr.push(data[j]);     
+    }
+    layui.use("laypage",function(){
+             var laypage = layui.laypage;  //分页
+        //我的回帖分页
+        laypage.render({
+            elem: "total_page",  //存放分页的容器
+            count: total_count,  //数据总数
+            limit: 10,  //每页显示的条数
+            groups: 5,  //连续出现的页码个数
+            first: "首页",
+            last: "尾页",
+            layout: ["count","prev","page","next","skip"],
+            jump: function(obj){
+                //渲染模板
+                document.getElementById("total_msg").innerHTML = function(){
+                    var total_html = "";
+                    var total_html_li = "";
+                    var Data = total_count_arr.concat().splice(obj.curr*obj.limit - obj.limit, obj.limit);
+                    layui.each(Data, function(index, item){
+
+                    //计算时间
+                    var date1 = item.addTime;
+                    var date2 = new Date();
+                    var date3 = date2.getTime() - new Date(date1).getTime();
+                    var days=Math.floor(date3/(24*3600*1000));
+                    var leave1=date3%(24*3600*1000);
+                    var hours=Math.floor(leave1/(3600*1000));
+                    var leave2=leave1%(3600*1000);
+                    var minutes=Math.floor(leave2/(60*1000));
+
+                      total_html_li += ("<li><img src='web/imgs/header.png' width='45' height='45' hspace='10' /><div><div>");
+
+                      total_html_li += ("<h1 title='"+ item.title +"'><a href='/sys/main?xwl=344KO405D10C&id="+item.id+"'>"+ item.title +"</a></h1></div>");
+
+                      total_html_li += ("<div><span>"+ item.addName +"</span>");
+                      if(days>=1){
+                        total_html_li += ("<span> "+ days +'天前'+"</span>");
+                      }
+                      if(hours>=1 && hours<24 && days<1){
+                        total_html_li += ("<span> "+ hours +'小时前'+"</span>");
+                      }
+                      if(minutes>3&& hours<1 && days<1){
+                        total_html_li += ("<span> "+ minutes +'分钟前'+"</span>");
+                      }
+                      if(minutes<3 && hours<1 && days<1){
+                        total_html_li += ("<span>刚刚</span>");
+                      }
+                       var arr = item.labels.split(",").slice(0,3); 
+                      if(item.labels.split(",").length > 3){
+                         arr[2] += "...";
+                      }   	
+                      layui.each(arr, function(index, item){
+                        total_html_li += ("<span class='label'>"+item+"</span>");
+                      });
+                      total_html_li += ("<span><i class='layui-icon' style='margin-right:5px'>&#xe63a;</i>"+ item.replyCount+ "</span></div></div></li>");  
+
+                    });            	
+                    total_html += "<ul>"+total_html_li+"</ul>";
+                    return total_html;
+                }();  //匿名函数，自动调用
+              }
+           });               
+       });
+  }
+  //日志记录分页的方法
+  function log(data){
+    //分页             
+    var log_count=0;       //日志记录数
+    var log_count_arr=[];  //日志记录
+
+    for(var j=0; j<data.length; j++){
+      log_count++;
+      log_count_arr.push(data[j]);   
+    }
+    layui.use("laypage",function(){
+      var laypage = layui.laypage;  //分页
+      //我的帖子分页
+      laypage.render({
+        elem: "log_page",  //存放分页的容器
+        count: log_count,  //数据总数
+        limit: 9,  //每页显示的条数
+        groups: 5,  //连续出现的页码个数
+        first: "首页",
+        last: "尾页",
+        layout: ["count","prev","page","next","skip"],
+        jump: function(obj){
+            //渲染模板
+            document.getElementById("log_msg").innerHTML = function(){
+                var log_html = "";
+                var log_html_li = "";
+                var Data = log_count_arr.concat().splice(obj.curr*obj.limit - obj.limit, obj.limit);
+                layui.each(Data, function(index, item){
+
+                    log_html_li += ("<li><div>");
+
+                    log_html_li += ("<span>"+item.addUserCpy+"</span>");
+
+                    log_html_li += ("<span>-</span>");
+
+                    log_html_li += ("<span>"+ item.addName +"</span>");
+
+                    log_html_li += ("<span title='"+item.operation+"'> "+ item.operation+"</span>");
+
+                    var index_log = item.addTime.lastIndexOf(":");
+
+                    log_html_li += ("<span>"+ item.addTime.slice(0,index_log) +"</span>");
+
+                });            	
+                log_html += "<ul>"+log_html_li+"</ul>";
+                return log_html;
+            }();  //匿名函数，自动调用
+           }
+        });
+     });
+  }
+  //按时间搜索查看日志记录的方法
+  function search(){
+    var start_time_search=$('#test1').val();
+    var end_time_search=$('#test2').val();
+    if(start_time_search==''){
+      return layer.msg('请选择开始时间！',{shift:6});
+    }
+    if(end_time_search==''){
+      return layer.msg('请选择结束时间！',{shift:6});
+    }
+    if(start_time_search==end_time_search){
+      return layer.msg('开始时间和结束时间不能一致！',{shift:6});
+    }
+    if(new Date(end_time_search)-new Date(start_time_search)<0){
+      return layer.msg('开始时间不能早于结束时间哦！',{shift:6});
+    }
+    $.ajax({
+      type:"post",
+      url: "main?xwl=344I5WKT9IO7",
+      data:{startTime:start_time_search,endTime:end_time_search},
+      success: function(text){
+        var data= JSON.parse(text).rows;
+        for(var i=0;i<data.length;i++){
+          data[i].operation = delHtmlTag(data[i].operation);
+        }
+        log(data);
+      }
+    }); 
+  }
+  //去掉所有的html标记的方法  
+  function delHtmlTag(str){  
+    return str.replace(/<[^>]+>/gm,"");
+  } 
+  function info_submit(){
+    var data_submit = {};  //提交数据
+    var nickname = $('#L_name').val().replace(/(^\s*)|(\s*$)/g, "");
+    var job = $('#L_job').val().replace(/(^\s*)|(\s*$)/g, "");
+    var motto = $('#L_sign').val().replace(/(^\s*)|(\s*$)/g, "");
+    var trueName = $('#R_name').val().replace(/(^\s*)|(\s*$)/g, "");
+    data_submit.userID = $("#L_name").attr('userID') || '';
+    data_submit.nickname = nickname.replace(/<\/?[^>]*>/g,'');
+    data_submit.cpyShortName = $('#L_company').val();
+    data_submit.job = job.replace(/<\/?[^>]*>/g,'');
+    data_submit.contactInfo = $('#L_socia').val();
+    data_submit.motto = motto.replace(/<\/?[^>]*>/g,'');
+    data_submit.trueName = trueName.replace(/<\/?[^>]*>/g,'');
+    data_submit.tel = $('#R_mobile').val().replace(/(^\s*)|(\s*$)/g, "");
+    data_submit.photo = $("#cropped-img").val();
+    if('我的资料'===$('#info_tab>li[class="layui-this"]').text()){
+      if(data_submit.nickname == ''){
+        return layer.msg('请输入您的昵称哦！',{shift:6});
+      }
+      if(data_submit.nickname.length > 10){
+        return layer.msg('您输入的昵称超过10个字了！',{shift:6});
+      }
+      if(data_submit.job.length > 20){
+        return layer.msg("您输入的岗位超过20个字了！",{shift:6});
+      }
+      if(data_submit.contactInfo.length > 20){
+        return layer.msg("您输入的社交账号超过20个字了！",{shift:6});
+      }
+      if(data_submit.motto.length > 200){
+        return layer.msg("您输入的座右铭超过200个字了！",{shift:6});
+      }
+    }
+    if('实名认证'===$('#info_tab>li[class="layui-this"]').text()){
+      if(data_submit.tel!=''){
+        if(!(/^((0\d{2,3}-\d{7,8})|(1[35784]\d{9}))$/.test(data_submit.tel))){
+          return layer.msg('填写的手机或座机格式有误！',{shift:6});
+        }
+      }
+    }
+    //获取跳转过来的tag
+    var tag = location.href[location.href.length-1];
+    var communityUuid;
+    if(tag == 2){
+      var index1 = location.href.search("communityUuid");
+      var index2 = location.href.lastIndexOf("&");
+      communityUuid = location.href.substring(index1+14,index2);
+    }
+    $.ajax({
+      type: "post",
+      data: data_submit,
+      url: "main?xwl=344Q6AGRLED4",
+      success: function(text){
+        var data = JSON.parse(text);
+        if(data.success){
+          layer.msg('保存成功');
+          //跳转页
+          if(tag == 1){  
+            setTimeout(function(){
+               window.open("/sys/main?xwl=344KO405BWNU","_self");  //发表新帖
+            },1000);
+          }else if(tag == 2){ 
+            setTimeout(function(){
+               window.open("/sys/main?xwl=344KO405D10C&id="+communityUuid,"_self");  //详情页
+            },1000);
+          }else{
+            setTimeout(function(){
+              location.reload();  //刷新当前页
+            },1000);
+          }
+        }else{
+          return layer.msg(data.msg,{shift:6});
+        }
+      }
+    });
+  }
+</script>
